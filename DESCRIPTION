@@ -8,9 +8,10 @@ Description: Routines for estimating number of missed entities after a series of
     searches. Implements the "evidence of absence" model of Huso et al. (2015) Often
     used to estimate true number of carcassess on a wind power facility's grounds
     after field searches.
-License: GPL
+License: GPL-2
 Encoding: UTF-8
 LazyData: true
 Depends:
+    R (>= 3.3.1),
     rjags
 RoxygenNote: 5.0.1
