@@ -54,4 +54,3 @@ syr <- data.frame(species=c("LBBA","LBBA","LBBA"),
    year = c(2015,2015,2016))
 getFleetG(syr, "LBBA")
 }
-

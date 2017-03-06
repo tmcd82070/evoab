@@ -6,7 +6,38 @@ used to estimate true number of carcassess on a wind power facility's grounds
 after field searches. Implements the **Evidence of Absence (EoA)** model of Huso et al. (2015) and the
 **Informed Evidence of Absence (IEoA)** approaches.
 
-## Example
+## How to git it
+
+Assuming you have access to GitLab (i.e., you are inside the WEST network), issue the following 
+commands in your git shell: 
+
+`cd <directory you want>`
+`git clone 'https://lar-git.west-inc.com/tmcdonald/evoab.git'`
+
+The above commands will download all source from GitLab to your computer.  Among other things, 
+you should see a `DESCRIPTION` file and `R` directory.  
+
+#### Using `devtools`
+
+Open R and `setwd()` to the directory containing the `DESCRIPTION` file. In R issure the following:
+
+`library(devtools)`
+`document()`
+`install()`
+
+#### Manual install
+
+Open a command window, change directory to the folder containing `DESCRIPTION` and issue 
+the following command: 
+
+`r CMD INSTALL evoab`
+
+
+## To Contribute
+
+If you change something, and it's useful, issue a [*merge request* here.](https://lar-git.west-inc.com/tmcdonald/evoab/merge_requests)
+
+## Usage Example
 
 At this time, the main routine is `estimateL.EoA.MultiYear`.  Here is an example of how 
 it is run: 

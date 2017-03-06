@@ -54,4 +54,3 @@ weight <- 1:5
 
 mixtureBeta(Ba=alpha,Bb=beta,w=weight) ## unequal weights
 }
-

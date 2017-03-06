@@ -64,4 +64,3 @@ plot(ieoa$out) # tracePlot
 gelman.diag(ieoa$out) # gelmanStats
 gelman.plot(ieoa$out) # gelmanPlot
 }
-
