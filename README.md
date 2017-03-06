@@ -11,8 +11,8 @@ after field searches. Implements the **Evidence of Absence (EoA)** model of Huso
 Assuming you have access to GitLab (i.e., you are inside the WEST network), issue the following 
 commands in your git shell: 
 
-`cd <directory you want>`
-`git clone 'https://lar-git.west-inc.com/tmcdonald/evoab.git'`
+`cd <directory you want>`  
+`git clone 'https://lar-git.west-inc.com/tmcdonald/evoab.git'`  
 
 The above commands will download all source from GitLab to your computer.  Among other things, 
 you should see a `DESCRIPTION` file and `R` directory.  
@@ -21,9 +21,9 @@ you should see a `DESCRIPTION` file and `R` directory.
 
 Open R and `setwd()` to the directory containing the `DESCRIPTION` file. In R issure the following:
 
-`library(devtools)`
-`document()`
-`install()`
+`library(devtools)`  
+`document()`  
+`install()`   
 
 #### Manual install
 
