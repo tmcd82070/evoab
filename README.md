@@ -43,24 +43,26 @@ At this time, the main routine is `estimateL.EoA.MultiYear`.  Here is an example
 it is run: 
 
 
-`# --- Fake data from a three year study`
-`# The alpha and beta parameters for g-value Beta distributions, one per year. `
+This is fake data from a three year study.  These are the 
+alpha and beta parameters for three g-value Beta distributions, one per year. 
 `g <- data.frame(
   alpha = c( 69.9299, 63.5035,  84.6997),
   beta = c(  736.4795,  318.3179, 759.9333 )
 )`
 
-`# The number of carcasses found each year
-X <- c( 0, 1, 3)`
+This is the number of carcasses found each year  
+`X <- c( 0, 1, 3)`
 
-`# The regular un-informed eoa estimator
-eoa <- estimateL.EoA.MultiYear( X, g, LMax=500 )  `
+This is how one calls the regular un-informed eoa estimator:  
+`eoa <- estimateL.EoA.MultiYear( X, g, LMax=500 )  `
 
-`# The informed eoa estimator
-ieoa <- estimateL.EoA.MultiYear( X, g, Lprior="normal", Lprior.mean=20, Lprior.sd=4) `
+This is how one calls the informed eoa estimator:  
+`ieoa <- estimateL.EoA.MultiYear( X, g, Lprior="normal", Lprior.mean=20, Lprior.sd=4) `
 
-`# To check convergence of the latter, run traceplot and Gelman stats
-plot(ieoa$out) # tracePlot
+After the informed routine runs, one should check convergence.  
+To do so, run a traceplot and Gelman stats.  Any r stats > 1.1 indicate suspect 
+convergence. 
+
+`plot(ieoa$out) # tracePlot
 gelman.diag(ieoa$out) # gelmanStats
-gelman.plot(ieoa$out) # gelmanPlot
-`
+gelman.plot(ieoa$out) # gelmanPlot`
