@@ -47,9 +47,9 @@
 #' X <- c( 0, 1, 3)
 #'
 #'
-#' eoa <- estimateL.EoA( X, g, LMax=500 )  # Un-informed EoA
+#' eoa <- estimateL.EoA.MultiYear( X, g, LMax=500 )  # Un-informed EoA
 #'
-#' ieoa <- estimateL.EoA( X, g, Lprior="normal", Lprior.mean=20, Lprior.sd=4) # Informed EoA
+#' ieoa <- estimateL.EoA.MultiYear( X, g, Lprior="normal", Lprior.mean=20, Lprior.sd=4) # Informed EoA
 #'
 #'
 #' # To check convergence, run traceplot and Gelman stats
