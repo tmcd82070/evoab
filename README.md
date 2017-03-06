@@ -44,7 +44,7 @@ it is run:
 
 
 This is fake data from a three year study.  These are the 
-alpha and beta parameters for three g-value Beta distributions, one per year. 
+alpha and beta parameters for three g-value Beta distributions, one per year.   
 `g <- data.frame(
   alpha = c( 69.9299, 63.5035,  84.6997),
   beta = c(  736.4795,  318.3179, 759.9333 )
