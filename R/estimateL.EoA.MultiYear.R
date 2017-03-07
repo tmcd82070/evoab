@@ -56,10 +56,25 @@
 #' plot(ieoa$out) # tracePlot
 #' gelman.diag(ieoa$out) # gelmanStats
 #' gelman.plot(ieoa$out) # gelmanPlot
-
 #'
-estimateL.EoA.MultiYear <- function(X, beta.params, Lprior="uniform", Lprior.mean=NULL, Lprior.sd=NULL, LMax=62, conf.level=0.9 ){
+estimateL.EoA.MultiYear <- function(lambda, X, beta.params, data, Lprior="uniform",
+                                    Lprior.mean=NULL, Lprior.sd=NULL, LMax=62,
+                                    conf.level=0.9 ){
 	library(rjags)
+
+  # Resolve formula for lambda
+  if (missing(data))
+    data <- environment(lambda)
+  mf <- match.call(expand.dots = FALSE)
+  m <- match(c("lambda", "data"), names(mf), 0L)
+  mf <- mf[c(1L, m)]
+  names(mf)[names(mf)=="lambda"] <- "formula"
+  mf$drop.unused.levels <- TRUE
+  mf[[1L]] <- quote(stats::model.frame)
+  mf <- eval(mf, parent.frame())
+  mt <- attr(mf, "terms")
+  lambda.covars <- if (!is.empty.model(mt))
+    model.matrix(mt, mf, contrasts)
 
 	nyrs <- length(X)
 	if( length(beta.params$alpha) == 1 ){
@@ -78,12 +93,22 @@ estimateL.EoA.MultiYear <- function(X, beta.params, Lprior="uniform", Lprior.mea
 		jagsModel <- "model{
 
 		# Priors
-		lambda ~ dunif(0.1,lambdaMax)
+    for(i in 1:ncovars){
+      a[i] ~ dnorm( 0, 4)
+    }
+
+    # functional relations
+    for(i in 1:nx){
+      for(j in 1:ncovars){
+        logl[i,j] <- a[i]*lambda.covars[i,j]
+      }
+      lambda[i] <- exp(sum(logl[i,]))
+    }
 
 		# Likelihood
 		for( i in 1:nx ){
 			g[i] ~ dbeta(alpha[i], beta[i])
-			M[i] ~ dpois(lambda)
+			M[i] ~ dpois(lambda[i])
 			X[i] ~ dbin( g[i], M[i] )
 		}
 
@@ -94,20 +119,33 @@ estimateL.EoA.MultiYear <- function(X, beta.params, Lprior="uniform", Lprior.mea
 
 		JAGS.data.0 <- list ( X = X,
 													nx = nyrs,
+													ncovars = ncol(lambda.covars),
 													alpha = alpha.vec,
 													beta = beta.vec,
-													lambdaMax = LMax)
+													lambdaMax = LMax,
+													lambda.covars = lambda.covars)
 
 } else if (Lprior == "normal"){
 	jagsModel <- "model{
 
 	# Priors
-	lambda ~ dnorm(lmean,ltau)
+  for(i in 1:ncovars){
+	  a[i] ~ dnorm( 0, 4)
+  }
+
+	# functional relations
+	for(j in 1:nx){
+	  logl[j] <- a[1]*lambda.covars[j,1]  # model must have at least one covar/intercept
+	  for(i in 2:ncovars){
+	    logl[j] <- logl[i-1] + a[i]*lambda.covars[j,i]
+	  }
+	  lambda[j] <- exp(logl[j])
+	}
 
 	# Likelihood
 	for( i in 1:nx ){
 		g[i] ~ dbeta(alpha[i], beta[i])
-		M[i] ~ dpois(lambda)
+		M[i] ~ dpois(lambda[i])
 		X[i] ~ dbin( g[i], M[i] )
 	}
 
@@ -118,10 +156,12 @@ estimateL.EoA.MultiYear <- function(X, beta.params, Lprior="uniform", Lprior.mea
 
 	JAGS.data.0 <- list ( X = X,
 												nx = nyrs,
+												ncovars = ncol(lambda.covars),
 												alpha = alpha.vec,
 												beta = beta.vec,
 												lmean = Lprior.mean,
-												ltau = 1/Lprior.sd^2)
+												ltau = 1/Lprior.sd^2,
+												lambda.covars = lambda.covars)
 	#print(JAGS.data.0)
 
 }
@@ -129,6 +169,7 @@ estimateL.EoA.MultiYear <- function(X, beta.params, Lprior="uniform", Lprior.mea
 writeLines(jagsModel, "model.txt")
 #cat(jagsModel)
 
+print(JAGS.data.0)
 
 ## ---- initialValues ----
 
@@ -145,8 +186,9 @@ Inits <- function(x){
 	} else {
 		gg <-rbeta(x$nx, x$alpha, x$beta)
 		M <- ceiling(x$X / gg) + 1
-		l <- mean(M)
-		list ( lambda = l,
+		a <- rep(0,ncol(x$lambda.covars))
+		a[1] <- log(mean(M))
+		list ( a = a,
 					 M = M,
 					 g=gg,
 					 .RNG.name="base::Wichmann-Hill",
@@ -168,7 +210,7 @@ nadapt <- 3000
 
 
 # Parameters to be monitored by WinBUGS
-params <- c("M", "g", "lambda", "Mtot")
+params <- c("a", "M", "g", "lambda", "Mtot")
 
 
 ## ---- jagsRun ----
@@ -200,22 +242,40 @@ print(summary(out))
 
 
 ## ---- quantiles ----
-tmp <- as.matrix(out)
-l.50 <- quantile(tmp[,"lambda"], 0.5)
-alpha <- c(0,1) + c(1,-1)*(1-conf.level)/2
-l.CI <- quantile(tmp[,"lambda"], alpha)
+# tmp <- as.matrix(out)
+# l.50 <- quantile(tmp[,"lambda"], 0.5)
+# alpha <- c(0,1) + c(1,-1)*(1-conf.level)/2
+# l.CI <- quantile(tmp[,"lambda"], alpha)
+#
+# M.50 <- quantile(tmp[,"Mtot"], 0.5)
+# M.CI <- quantile(tmp[,"Mtot"], alpha)
+#
+# ## ---- STD ----
+# # We may never use this
+# l.sd <- sd(tmp[,"lambda"])
+# M.sd <- sd(tmp[,"Mtot"])
+#
 
-M.50 <- quantile(tmp[,"Mtot"], 0.5)
-M.CI <- quantile(tmp[,"Mtot"], alpha)
 
-## ---- STD ----
-# We may never use this
-l.sd <- sd(tmp[,"lambda"])
-M.sd <- sd(tmp[,"Mtot"])
-
-
-
-list(lambda.est=data.frame(lambda=l.50, lambda.sd=l.sd, lambda.lo=l.CI[1], lambda.hi=l.CI[2],
-													 Mtot=M.50, Mtot.sd=M.sd, Mtot.lo=M.CI[1], Mtot.hi=M.CI[2],
-													 ci.level=conf.level), out=out)
+list(
+  #lambda.est=data.frame(lambda=l.50, lambda.sd=l.sd, lambda.lo=l.CI[1], lambda.hi=l.CI[2],
+	#												 Mtot=M.50, Mtot.sd=M.sd, Mtot.lo=M.CI[1], Mtot.hi=M.CI[2],
+	#												 ci.level=conf.level),
+  out=out)
 }
+
+
+
+# ---- Testing
+
+
+g <- data.frame(
+  alpha = c( 69.9299, 63.5035,  84.6997),
+  beta = c(  736.4795,  318.3179, 759.9333 )
+  )
+X <- c( 0, 1, 3)
+
+tmp.df <- data.frame(year=factor(c("2015","2016","2017")))
+
+
+eoa <- estimateL.EoA.MultiYear(~year, X, g, data=tmp.df, LMax=500 )  # Un-informed EoA
