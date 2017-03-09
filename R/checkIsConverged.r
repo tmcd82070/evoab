@@ -29,7 +29,7 @@
 #' Gelman, A and Rubin, DB (1992) Inference from iterative simulation
 #' using multiple sequences, Statistical Science, 7, 457-511.
 #'
-#' @seealso \link{\code{gelman.diag}}
+#' @seealso \link{\code{gelman.diag}}, \link{\code{checkIsConverged}}
 #'
 #' @examples
 #' \dontrun{
@@ -42,19 +42,19 @@
 #'    n.iter=1000,
 #'    thin=2)
 #'
-#' conf <- chechConvergence(out)
+#' conf <- chechIsConverged(out)
 #' }
 
 
-checkConvergence <- function(obj, criterion=1.1, quiet=FALSE){
+checkIsConverged <- function(obj, criterion=1.1, quiet=FALSE){
 
-  Rhats <- gelman.diag(out.coefs)
+  Rhats <- gelman.diag(obj)
   if(!quiet){
-    cat(paste0(paste(rep("-",4),collapse="")," Coefficient convergence:\n"))
+    cat(paste0(paste(rep("-",4),collapse="")," Checking convergence:\n"))
     print(Rhats)
   }
   Rhats <- Rhats$psrf[,"Upper C.I."]
-  if( any(Rhats > criterion) ){
+  if( any(Rhats > criterion, na.rm=TRUE) ){
     if(!quiet){
       cat("The following coefficients probably did not converge (Rhat > 1.1):\n")
       cat("Try increasing nburns and/or nthins or informing the coefficient's priors.\n")
