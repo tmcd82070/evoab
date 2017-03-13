@@ -77,7 +77,8 @@
 #'
 estimateL.EoA.MultiYear <- function(lambda, beta.params, data, priors=NULL,
                                     conf.level=0.9, nburns = 500000, niters = 20000,
-                                    nthins = 10, quiet=FALSE ){
+                                    nthins = 10, nchains = 3, nadapt = 3000,
+                                    quiet=FALSE, seeds=NULL ){
 	library(rjags)
 
   ## ---- lambdaModel ----
@@ -192,8 +193,17 @@ estimateL.EoA.MultiYear <- function(lambda, beta.params, data, priors=NULL,
 
 
   ## ---- initialValues ----
+  # MCMC sample size settings:
 
-  Inits <- function(x,strt){
+
+  if( is.null(seeds) ){
+    tmp.mult <- 10^(8)
+    seeds <- round(runif(nchains,0,tmp.mult))
+  } else if (length(seeds) != nchains) {
+    stop(paste("MCMC random number seeds should be NULL or length", nchains ))
+  }
+
+  Inits <- function(x,strt,seed){
   		gg <-rbeta(x$nx, x$alpha, x$beta)
   		M <- ceiling(x$Y / gg) + 1
   		#a <- strt$startA[,"Estimate"] + rnorm(nrow(strt$startA),0,strt$startA[,"Std. Error"])
@@ -202,17 +212,15 @@ estimateL.EoA.MultiYear <- function(lambda, beta.params, data, priors=NULL,
   		list ( a = a,
   					 M = M,
   					 g=gg,
-  					 .RNG.name="base::Wichmann-Hill",
-  					 .RNG.seed=62234 )
+  					 .RNG.name="base::Mersenne-Twister",
+  					 .RNG.seed=seed )
   }
 
-  inits = list(  Inits(JAGS.data.0, sd.n.start),
-							 Inits(JAGS.data.0, sd.n.start),
-							 Inits(JAGS.data.0, sd.n.start))
+  inits<-vector("list",nchains)
+  for(i in 1:nchains){
+    inits[[i]]<-Inits(JAGS.data.0, sd.n.start, seeds[i])
+  }
 
-  # MCMC sample size settings:
-  nchains <- 3
-  nadapt <- 3000
 
 
   # Parameters to be monitored by WinBUGS
@@ -283,7 +291,8 @@ estimateL.EoA.MultiYear <- function(lambda, beta.params, data, priors=NULL,
     design.mat=lambda.covars),
     conv,
     auto,
-    conf.level=conf.level
+    conf.level=conf.level,
+    seeds=seeds
   )
 
 
@@ -295,14 +304,14 @@ estimateL.EoA.MultiYear <- function(lambda, beta.params, data, priors=NULL,
 # ---- Testing
 
 # A simple example with three years, four observations
-g <- data.frame(
-  alpha = c( 69.9299, 63.5035,  84.6997, 84.6997),
-  beta = c(  736.4795,  318.3179, 759.9333, 759.9333 )
-  )
-Y <- c( 0, 1, 3, 10 )
-
-tmp.df <- data.frame(year=factor(c("2015","2016","2017","2017")),
-                     Year=c(1,2,3,3))
+# g <- data.frame(
+#   alpha = c( 69.9299, 63.5035,  84.6997, 84.6997),
+#   beta = c(  736.4795,  318.3179, 759.9333, 759.9333 )
+#   )
+# Y <- c( 0, 1, 3, 10 )
+#
+# tmp.df <- data.frame(year=factor(c("2015","2016","2017","2017")),
+#                      Year=c(1,2,3,3))
 
 
 # A more complicated example, with 3 years, 100 observations, lambda slope = 20
@@ -320,8 +329,8 @@ tmp.df <- data.frame(year=factor(c(rep("2015",n3),rep("2016",n3),rep("2017",n-2*
                      Year=c(rep(1,n3),rep(2,n3),rep(3,n-2*n3)))
 
 
-prior <- data.frame(mean=c(12,10,5,5), sd=c(5,6,7,8), x=10:13)
-row.names(prior) <- c("(Intercept)","year2017","year2016", "bob")
+prior <- data.frame(mean=c(log(3),10,5,5), sd=c(.5,6,7,8), x=10:13)
+row.names(prior) <- c("(Intercept)","year1","year2", "bob")
 
 eoa <- estimateL.EoA.MultiYear(Y~year, g, data=tmp.df, nburn = 700000, niters= 2000*100, nthins = 100, quiet=FALSE )  # Un-informed EoA
 #tmp.1 <-apply(as.matrix(eoa$out),2,median)
