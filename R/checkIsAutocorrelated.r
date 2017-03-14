@@ -23,7 +23,7 @@
 #' chains.
 #'
 #' @return A list with the following components
-#' \list{
+#' \itemize{
 #'   \item autoCorrelated: If the average autocorrelations at the specified
 #'   lag are all less than
 #'   \code{criterion}, the chain is declared un-autocorrelated and is set FALSE.
@@ -35,7 +35,7 @@
 #' @author Trent McDonald
 #'
 #'
-#' @seealso \link{\code{checkIsConverged}}
+#' @seealso \code{\link{checkIsConverged}}
 #'
 #' @examples
 #' \dontrun{

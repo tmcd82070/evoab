@@ -10,31 +10,24 @@
 #' multiple sites are involved, elements of Y are the total (summed) number
 #' of targets found per season.
 #'
-#' @param beta.params A data frame containing, at a minimum, two columns named \code{$alpha}
-#' and \code{$beta}.
-#' These are the annual alpha and beta parameters that determine the overall annual g.
-#' Length of \code{$alpha} and \code{$beta} is either one, in which case g is constant across years,
-#' or one element per year.
+#' @param alpha.vec vector of the alpha parameters of the Beta distributions
 #'
-#' @param Lprior Prior for lambda.  "uniform" uses a uniform[0,LMax] prior for lambda.
-#' "normal" uses a normal(Lprior.mean,Lprior.sd) prior for lambda.
+#' @param beta.vec vector of the beta parameters of the Beta distributions
 #'
-#' @param Lprior.mean Mean of lambda prior when Lprior == "normal".
+#' @param X a design matrix upon which an approximation of inflated
+#' numbers of targets is regressed.  Usually, this is meant to be the
+#' design matrix from the \code{eoa} function.
 #'
-#' @param Lprior.sd Standard deviation of normal when Lprior == "normal".
+#' @param range.multiplier a multipiler for the range of coefficient
+#' estimates to make the output standard deviations sufficiently vague.
+#' Increasing this number increases vagueness.
 #'
-#' @param LMax Maximum lambda when Lprior = "uniform".
+#' @return List containing two components.  \code{$vagueSd} is a
+#' vector, one per parameter, of standard deviations that should
+#' be large enough to call vague when used in a normal prior.
+#' \code{$startA} is a vector of potential starting values for
+#' the coefficients in the model.
 #'
-#' @param conf.level Confidence level for the confidence intervals on lambda.
-#'
-#' @return List containing two components.  \code{$lamda.ests} is a data
-#' frame containing the lambda estiamtes (point est and confidence interval).
-#' In this component \code{$Mtot} is the estimated number of targets over
-#' all seasons.
-#' \code{$out} is the full MCMC chain object.  Use this to check convergence, etc.
-#'
-#'
-#' @examples
 #'
 compVagueSd<- function(Y,alpha.vec,beta.vec,X, range.multiplier=100){
 

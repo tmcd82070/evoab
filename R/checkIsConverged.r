@@ -14,7 +14,7 @@
 #' a set of MCMC chains by calling \code{gelman.diag} in the \code{coda} package.
 #'
 #' @return A list with the following components
-#' \list{
+#' \itemize{
 #'   \item converged: If the uppper limits of the  'potential scale
 #'   reduction factors' associated with all parameters are less than
 #'   \code{criterion}, the chain is declared converged and this is TRUE.
@@ -29,7 +29,7 @@
 #' Gelman, A and Rubin, DB (1992) Inference from iterative simulation
 #' using multiple sequences, Statistical Science, 7, 457-511.
 #'
-#' @seealso \link{\code{gelman.diag}}, \link{\code{checkIsConverged}}
+#' @seealso \code{\link{gelman.diag}}, \code{\link{checkIsConverged}}
 #'
 #' @examples
 #' \dontrun{

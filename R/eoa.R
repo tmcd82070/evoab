@@ -1,6 +1,6 @@
 #' @export
 #'
-#' @title eoa - Evidence of Absence model fitting.
+#' @title eoa - Evidence of Absence model estimation.
 #'
 #' @description  This routine estimates an EoA model.  An EoA model
 #' consists of a log-linear for lambda, the mean number of search targets per "cell", where
@@ -13,7 +13,7 @@
 #' Estimation is performed using JAGS.
 #'
 #' @param lambda A model formula for the lambda parameters of EoA.
-#' This formulat has the form \code{Y ~ X1 + X2} + etc. (exactly like \link{\code{lm}}).
+#' This formulat has the form \code{Y ~ X1 + X2} + etc. (exactly like \code{\link{lm}}).
 #' Here,  \code{Y} is a Vector of number of carcasses found, one element per "cell". For example, if
 #' multiple sites are searched in a single season, elements of Y are the number
 #' of targets found at each site.  If multiple sites are searched during multiple seasons,
@@ -93,7 +93,7 @@
 #'
 #' @details
 #' The EoA model implemented here is as follows:
-#' \list{
+#' \enumerate{
 #'   \item Target count Y[i] is assumed to be binomial(M[i],g[i]).
 #'   \item Binomial index M[i] is assumed to be poisson(lambda[i]).
 #'   \item Binomial probability g[i] is assumed to be Beta(alpha[i],beta[i]).
@@ -104,7 +104,7 @@
 #'
 #'
 #' @return List containing the following components:
-#' \list{
+#' \itemize{
 #'   \item \code{estimates} : a matrix containing parameter estimates and
 #'   standard errors.  This matrix contains  one row per parameter and
 #'   two columns.  \code{rownames(x$estimates)} lists the parameters.
@@ -112,7 +112,7 @@
 #'   of that parameter's posterior marginal, and \code{SD}, containing
 #'   the standard deviation of the parameter's posterior marginal.  The
 #'   following parameters are included:
-#'   \list{
+#'   \itemize{
 #'     \item \code{M} : Mortality estimates in individual "cells". For example,
 #'     \code{M[4]} is the estimate (median of posterior) of mortalities at
 #'     the site represented in cell 4 of the data set.
@@ -158,20 +158,20 @@
 #'   \item \code{converged} : Logical value for whether this routine thinks the
 #'   MCMC chain has converged.  The MCMC sampling is deemed to have converged if all Gelman
 #'   R-hats are less than some criterion. This function simply calls
-#'   \link{\code{checkIsConverged}} with an mcmc.list object containing coefficients only
+#'   \code{\link{checkIsConverged}} with an mcmc.list object containing coefficients only
 #'   and a criterion of 1.1.  Convergence checking is only done on lambda model coefficients.
 #'
 #'   \item \code{Rhats} : Gelman's R-hats for every parameter.  This is one of the output
-#'   components of \link{\code{checkIsConverged}}.
+#'   components of \code{\link{checkIsConverged}}.
 #'
 #'   \item \code{autoCorrelated} :  Logical value indicating whether this routine
 #'   thinks the MCMC is autocorrelated. Normally, one does not want autocorrelation
-#'   in the final chains. This function simply calls \link{\code{checkIsAutocorrelated}}
+#'   in the final chains. This function simply calls \code{\link{checkIsAutocorrelated}}
 #'   with the mcmc.list and \code{criterion=0.4} and \code{lag=2}.
 #'
 #'   \item \code{autoCorrs} : a vector of autocorrelations used the judge whether
 #'   the chains are autocorrelated.  This is a vector with same length as number of
-#'   coefficients, and is the second component of the output of \link{\code{checkIsAutocorrelated}}.
+#'   coefficients, and is the second component of the output of \code{\link{checkIsAutocorrelated}}.
 #'   Only model coefficients are checked for autocorrelation.
 #'
 #'   \item \code{conf.level} : the two-tailed confidence level for all confidence intervals
@@ -185,20 +185,8 @@
 #'
 #'
 #' @examples
-#' # Three year study
-#' g <- data.frame(
-#'    alpha = c( 69.9299, 63.5035,  84.6997),
-#'    beta = c(  736.4795,  318.3179, 759.9333 )
-#'    )
-#' Y <- c( 0, 1, 3)
-#'
-#'
-#' eoa <- estimateL.EoA.MultiYear( Y, g, LMax=500 )  # Un-informed EoA
-#'
-#' ieoa <- estimateL.EoA.MultiYear( Y, g, Lprior="normal", Lprior.mean=20, Lprior.sd=4) # Informed EoA
-#'
-#' # 3 year study of 7 sites. 21 "cells". lambda change = 20/year
-#' set.seed(9430834) # fixes Y and g of this example, but not the actual chains
+#' # A 3 year study of 7 sites. 21 "cells". lambda change = 20/year
+#' set.seed(9430834) # fixes Y and g of this example, but not the RNG's used in chains
 #' ns <- 3
 #'
 #' ny <- 7
