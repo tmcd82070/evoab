@@ -71,8 +71,8 @@ The following computes un-informed EoA (vague priors for coefficients):
 This computes IEoA:
 
 
-`# Assume prior mean is 10 and prior sd is 3  
-# Fit intercept-only model to get one mean lambda
+`# Assume prior mean is 10 and prior sd is 3`  
+`# Fit intercept-only model to get one mean lambda
 prior <- data.frame(mean=log(10), sd=log(3), row.names="(Intercept)")
 eoa.1 <- eoa(Y~1, g, df, priors=prior )`
 
