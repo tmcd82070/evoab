@@ -6,7 +6,7 @@ used to estimate true number of carcassess on a wind power facility's grounds
 after field searches. Implements the **Evidence of Absence (EoA)** model of Huso et al. (2015) and the
 **Informed Evidence of Absence (IEoA)** approaches.
 
-## How to git it
+## How to git it:
 
 Assuming you have access to GitLab (i.e., you are inside the WEST network), issue the following 
 commands in your git shell: 
@@ -16,6 +16,8 @@ commands in your git shell:
 
 The above commands will download all source from GitLab to your computer.  Among other things, 
 you should see a `DESCRIPTION` file and `R` directory.  
+
+## Intalling:
 
 #### Using `devtools`
 
@@ -39,30 +41,49 @@ If you change something, and it's useful, issue a [*merge request* here.](https:
 
 ## Usage Example
 
-At this time, the main routine is `estimateL.EoA.MultiYear`.  Here is an example of how 
+At this time, the main routine is `eoa`.  It takes a count vector, model for lambda, and g-values, 
+Here is an example of how 
 it is run: 
 
+This is fake data from a three year study on seven sites.  First, the 
+alpha and beta parameters for g-value distributions, one per year.   
+`ns <- 3  
+ny <- 7  
+g <- data.frame(  
+  alpha = rnorm(ns*ny,70,2),  
+  beta = rnorm(ns*ny,700,25)  
+)`  
 
-This is fake data from a three year study.  These are the 
-alpha and beta parameters for three g-value Beta distributions, one per year.   
-`g <- data.frame(
-  alpha = c( 69.9299, 63.5035,  84.6997),
-  beta = c(  736.4795,  318.3179, 759.9333 )
-)`
+This is the carcasses count vector, one count per site per year.  
 
-This is the number of carcasses found each year  
-`X <- c( 0, 1, 3)`
+`Y <- rbinom(ns*ny, c(rep(20,ny), rep(40,ny), rep(60,ny)), g$alpha/(g$alpha+g$beta))`
 
-This is how one calls the regular un-informed eoa estimator:  
-`eoa <- estimateL.EoA.MultiYear( X, g, LMax=500 )  `
+This is the covariate data frame.  This data frame contains Year as a linear 
+effect (1,2,3,etc) and Year as a factor (2015, 2016, 2017, etc).  
 
-This is how one calls the informed eoa estimator:  
-`ieoa <- estimateL.EoA.MultiYear( X, g, Lprior="normal", Lprior.mean=20, Lprior.sd=4) `
+`df <- data.frame(year=factor(c(rep("2015",ny),rep("2016",ny),rep("2017",ny))),  
+    Year=c(rep(1,ny),rep(2,ny),rep(3,ny)))`  
 
-After the informed routine runs, one should check convergence.  
-To do so, run a traceplot and Gelman stats.  Any r stats > 1.1 indicate suspect 
+The following computes un-informed EoA (vague priors for coefficients):     
+
+`eoa.1 <- eoa(Y~year, g, df )`
+
+This computes IEoA:
+
+
+`# Assume prior mean is 10 and prior sd is 3  
+# Fit intercept-only model to get one mean lambda
+prior <- data.frame(mean=log(10), sd=log(3), row.names="(Intercept)")
+eoa.1 <- eoa(Y~1, g, df, priors=prior )`
+
+
+After either run, you should check convergence.  
+To do so, run a traceplot and Gelman stats.  Any Rhats > 1.1 indicate suspect 
 convergence. 
 
-`plot(ieoa$out) # tracePlot
-gelman.diag(ieoa$out) # gelmanStats
-gelman.plot(ieoa$out) # gelmanPlot`
+`library(lattice)  
+xyplot(ieoa.1$out[,labels(ieoa.1)])  
+acfplot(ieoa.1$out[,labels(ieoa.1)])  
+densityplot(ieoa.1$out[,labels(ieoa.1)])  
+gelman.diag(ieoa.1$out) # gelmanStats  
+gelman.plot(ieoa.1$out) # gelmanPlot`
