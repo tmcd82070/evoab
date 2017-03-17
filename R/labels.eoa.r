@@ -39,18 +39,18 @@
 #' labels(eoa.1)
 #' labels(eoa.1,"derived")
 #' labels(eoa.1,"^M")  # all M parameters
-#' labels(eoa.1,"\\[3\\]$) # M[3] and lambda[3]
+#' labels(eoa.1,"\\[3\\]$") # M[3] and lambda[3]
 #' labels(eoa.1,".") # all parameter labels
 #'
 #' plot(eoa.1$out[,labels(eoa.1)])  # trace plot of coefficients.
 #'
 labels.eoa <- function(obj, type="coef"){
 
-  if(type="coef"){
+  if(type=="coef"){
     ans <- obj$coef.labels
   } else {
     ans <- dimnames(obj$estimates)[[1]]
-    if(type="derived"){
+    if(type=="derived"){
       ans <- ans[!(ans %in% obj$coef.labels)]
     } else {
       ind <- grep(type, ans)

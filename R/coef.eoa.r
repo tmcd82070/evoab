@@ -1,6 +1,6 @@
 #' @export
 #'
-#' @title coef - Coefficient extractor for EoA models.
+#' @title coef.eoa - Coefficient extractor for EoA models.
 #'
 #' @description Extracts the log-linear model coefficients from an
 #' \code{eoa} model object.  See \code{\link{eoa}}.
