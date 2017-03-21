@@ -136,6 +136,10 @@ An object of class "eoa".  Eoa objects are a lists containing the following comp
   chains for parameters named "(Intercept)" and "year".  See examples for some
   useful plots.
 
+  \item \code{jags.model} : a \code{jags.model} object used to estimate the model.
+  This object can be used to compute additional convergence and model fit statistics,
+  such as DIC (see \code{\link{rjags::dic.samples}}).
+
   \item \code{priors} : the mean and standard deviation of the normal
   prior distributions for all coefficients. This differs from the input
   \code{priors} parameter because matching of terms and row names has been done.
@@ -156,6 +160,8 @@ An object of class "eoa".  Eoa objects are a lists containing the following comp
   in the model.  This is used to distinguish coefficients from derived parameters.
   All parameters in \code{ests} not listed here are considered derived. See \code{\link{labels.eoa}},
   and \code{\link{coef.eoa}}.
+
+  \item \code{call} : the call that invoked this function.
 
   \item \code{converged} : Logical value for whether this routine thinks the
   MCMC chain has converged.  The MCMC sampling is deemed to have converged if all Gelman
@@ -201,6 +207,23 @@ the model are M[i] = number of total targets in cell i including those
 observed and those missed, lambda[i] = the mean number of (or rate of) targets
 in cell i per offset[i], and g[i] = probability of observing a target in cell i.
 
+If a log(offset) term is not included, lambda[i] is mean number of targets per
+cell.  For example, if a cell is one season of monitoring at single sites, lambda
+is targets per season per site.  If a cell is one season of monitoring at multiple sites
+(i.e., a facility), lambda is targets per season per facility.  If a log(offset) term
+is included, lambda[i] is the cell-specific mean number of targets per offset unit.  For example, if
+a cell contains counts from an entire  wind power facility and the offset is
+log(number of turbines), lambda
+is number of targets per turbine by facility in the analysis.
+If the offset is log(days in season), lambda is
+number of targets per day for each cell.  If two offset terms are included like
+\code{offset(log(turbines)) + offset(log(days))}, lambda is number of targets
+per turbine per day for the cell.
+
+Parameter \code{Mtot} is the sum of all \code{M} parameters in the analysis.
+This derived parameters may not mean anything in specific problems, but is
+a fairly common derived parameter.
+
 The EoA model implemented here is as follows:
 \enumerate{
   \item Target count Y[i] is assumed to be binomial(M[i],g[i]).
@@ -211,29 +234,6 @@ of covariaes. That is, log(lambda[i]) = A[0] + A[1]x[1i] + A[2]x[2i] + etc. If
 an log(offset) term is included, the model is log(lambda[i]/offset[i]) = A[0] + A[1]x[1i] + A[2]x[2i] + etc.
   \item Beta hyper-parameters alpha[i] and beta[i] are constants.
 }
-
-If a log(offset) term is not included, lambda[i] is mean number of targets per
-cell.  For example, if a cell is one season of monitoring at a site and multiple
-sites are included in the analysis, lambda
-is targets per season per site.  If a cell is one season of monitoring pooled over multiple sites
-(i.e., counts pooled to a facility) and multiple facilities
-are included in the analysis, lambda is targets per season per facility.
-
-If a log(offset) term
-is included, lambda[i] is the cell-specific mean number of targets per offset unit.  For example, if
-a cell contains counts from an entire  wind power facility and the offset is
-log(number of turbines), lambda[i]
-is number of targets per turbine at facility i.
-If the offset is log(days in season), lambda[i] is
-number of targets per day for cell[i.  If two offset terms are included like
-\code{offset(log(turbines)) + offset(log(days))}, lambda[i] is number of targets
-per turbine per day for the cell[i].
-
-In all cases, the theoretical distribution of random variable M[i] is
-Poisson with mean (exp(offset[i])*lambda[i]).
-
-Parameter \code{Mtot} is the sum of all \code{M} parameters in the analysis.
-This derived parameters is common, but may not mean anything in specific problems
 }
 \examples{
 # A 3 year study of 7 sites. 21 "cells". lambda change = 20/year
