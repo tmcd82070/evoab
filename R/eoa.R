@@ -201,6 +201,9 @@
 #'
 #'   \item \code{call} : the call that invoked this function.
 #'
+#'   \item \code{data} : the input data set.  This can be handy for prediction and model
+#'   selection.
+#'
 #'   \item \code{converged} : Logical value for whether this routine thinks the
 #'   MCMC chain has converged.  The MCMC sampling is deemed to have converged if all Gelman
 #'   R-hats are less than some criterion. This function simply calls
@@ -519,7 +522,8 @@ eoa <- function(lambda, beta.params, data, offset,
     seeds=seeds,
     offset=offset,
     coef.labels=vnames,
-    call=cl
+    call=cl,
+    data=data
     ),
     conv,
     auto,
