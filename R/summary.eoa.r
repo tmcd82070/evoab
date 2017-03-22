@@ -39,9 +39,9 @@ summary.eoa <- function(obj){
   cat("\n")
 
   cat("Coefficients:\n")
-  cis <- obj$intervals[labels(obj),]
+  cis <- obj$intervals[labels(obj),drop=FALSE]
   dimnames(cis)[[2]] <- paste0("CI.",dimnames(cis)[[2]])
-  ests <- cbind(obj$estimates[labels(obj),], cis)
+  ests <- cbind(obj$estimates[labels(obj),drop=FALSE], cis)
   print(ests)
   cat("\n")
 
