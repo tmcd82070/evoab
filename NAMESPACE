@@ -3,6 +3,7 @@
 S3method(coef,eoa)
 S3method(labels,eoa)
 S3method(summary,eoa)
+S3method(update,eoa)
 export(checkIsAutocorrelated)
 export(checkIsConverged)
 export(compVagueSd)

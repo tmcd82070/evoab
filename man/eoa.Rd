@@ -163,6 +163,9 @@ An object of class "eoa".  Eoa objects are a lists containing the following comp
 
   \item \code{call} : the call that invoked this function.
 
+  \item \code{data} : the input data set.  This can be handy for prediction and model
+  selection.
+
   \item \code{converged} : Logical value for whether this routine thinks the
   MCMC chain has converged.  The MCMC sampling is deemed to have converged if all Gelman
   R-hats are less than some criterion. This function simply calls
