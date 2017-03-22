@@ -71,12 +71,14 @@ summary.eoa <- function(obj){
       for(j in 1:nchains){
         tmp.2 <- acf(as.matrix(obj$out[[j]][,i]), lag.max = niter(obj$out)/2, plot=FALSE)
         tmp.2 <- data.frame(acf=tmp.2$acf,lag=tmp.2$lag)
-        tmp.2 <- tmp.2[tmp.2$acf>0,]
-        acf0mat[i,j] <- min(which(diff(tmp.2$lag)>1))  # first lag acf below 0
+        if( sum(tmp.2$acf>0) >0){
+          tmp.2 <- tmp.2[tmp.2$acf>0,]
+          acf0mat[i,j] <- min(which(diff(tmp.2$lag)>1))  # first lag acf below 0
+        }
       }
     }
     cat("Within chain auto-correlation is HIGH.")
-    cat(paste0(" (try nthins = ", round(mean(acf0mat)*thin(obj$out)), ")\n"))
+    cat(paste0(" (try nthins = ", round(mean(acf0mat,na.rm = TRUE)*thin(obj$out)), ")\n"))
   } else {
     cat("Within chain auto-correlation is acceptable.\n")
   }
