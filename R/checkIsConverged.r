@@ -53,12 +53,14 @@ checkIsConverged <- function(obj, criterion=1.1, quiet=FALSE){
     cat(paste0(paste(rep("-",4),collapse="")," Checking convergence:\n"))
     print(Rhats)
   }
+  vnames <- dimnames(Rhats$psrf)[[1]]
   Rhats <- Rhats$psrf[,"Upper C.I."]
+  names(Rhats) <- vnames
   if( any(Rhats > criterion, na.rm=TRUE) ){
     if(!quiet){
       cat("The following coefficients probably did not converge (Rhat > 1.1):\n")
-      cat("Try increasing nburns and/or nthins or informing the coefficient's priors.\n")
       print(names(Rhats)[Rhats > criterion])
+      cat("Try increasing nburns and/or nthins or informing the coefficient's priors.\n")
     }
     ans <- FALSE
   } else {
