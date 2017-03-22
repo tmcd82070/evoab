@@ -483,8 +483,9 @@ eoa <- function(lambda, beta.params, data, offset,
   #print(summary(out))
 
   # extract the coefficients and label em
-  out.coefs <- out[,grep("^a\\[",varnames(out))]
-  varnames(out)[grep("^a\\[",varnames(out))] <- vnames
+  # Careful.  You can't have any other parameters that start with 'a'.
+  out.coefs <- out[,grep("^a",varnames(out))]
+  varnames(out)[grep("^a",varnames(out))] <- vnames
   varnames(out.coefs) <- vnames
 
   # Check convergence
