@@ -129,9 +129,9 @@ inits = list(  Inits(JAGS.data.0),
 
 
 # MCMC sample size settings:
-niters <- 15000
+niters <- 10000
 nthins <- 10
-nburn  <- 75000
+nburn  <- 50000
 nchains <- 3
 nadapt <- 2000
 
