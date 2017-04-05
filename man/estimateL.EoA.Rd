@@ -6,7 +6,9 @@
 lambda parameters via JAGS}
 \usage{
 estimateL.EoA(X, beta.params, Lprior = "uniform", Lprior.mean = NULL,
-  Lprior.sd = NULL, LMax = 62, conf.level = 0.9)
+  Lprior.sd = NULL, LMax = 62, conf.level = 0.9, seeds = NULL,
+  niters = 10000, nthins = 10, nburn = 50000, nadapt = 2000,
+  nchains = 3)
 }
 \arguments{
 \item{X}{Total number of search targets found at all searched sites during the
@@ -14,7 +16,7 @@ entire search season.}
 
 \item{beta.params}{A list containing, at a minimum, components named $alpha and $beta.
 These are the all-site alpha and beta parameters for g. In many cases, these parameters
-are computed using function \link{\code{getFleetG}}.}
+are computed using function \code{\link{getFleetG}}.}
 
 \item{Lprior}{A string naming the prior distribution to use for lambda.
 "uniform" uses a uniform prior on [0,\code{LMax}].
@@ -29,6 +31,32 @@ that is well beyond the upper limit of the confidence interval on lambda.  i.e.,
 you may need to run this a couple times to make this big enough.}
 
 \item{conf.level}{Confidence level for the confidence intervals on lambda.}
+
+\item{seeds}{A vector of length \code{nchains} containing random number
+seeds for the MCMC sampler.  If NULL, \code{nchains} random numbers are
+generated from R's base random number generator which is controled outside
+this routine using \code{set.seed}.  Regardless of the random number
+sequence set outside this routine, specifying \code{seeds} will set
+the MCMC seeds in JAGS so that exact chains can be reproduced. Note
+that \code{set.seed} has no effect on the random number sequences used
+in JAGS.  The seeds, whether chosen by this routine or specified, are
+stored in the output object.}
+
+\item{niters}{The number of sampling steps to take during MCMC sampling.}
+
+\item{nthins}{The amount of MCMC chain thinning to do.  Every (\code{nthins})-th
+sampling iteration (of which there are \code{niters}) is saved, while the
+rest are discarded. In the end, a total of \code{niters/nthins} samples from
+the posterior are available to the user.}
+
+\item{nadapt}{The number of adapting iterations to perform before
+burn-in.  During adaptin, JAGS is trying to optimize it's proposal distribution
+and stepsize to increase convergence speed.}
+
+\item{nchains}{The number of MCMC sampling chains. Specify 2 or more to
+check convergence.}
+
+\item{nburns}{The number of burn-in steps to take during MCMC sampling.}
 }
 \value{
 List containing two components:

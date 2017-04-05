@@ -14,7 +14,7 @@
 #'
 #' @param beta.params A list containing, at a minimum, components named $alpha and $beta.
 #' These are the all-site alpha and beta parameters for g. In many cases, these parameters
-#' are computed using function \link{\code{getFleetG}}.
+#' are computed using function \code{\link{getFleetG}}.
 #'
 #' @param Lprior A string naming the prior distribution to use for lambda.
 #' "uniform" uses a uniform prior on [0,\code{LMax}].
@@ -29,6 +29,32 @@
 #' you may need to run this a couple times to make this big enough.
 #'
 #' @param conf.level Confidence level for the confidence intervals on lambda.
+#'
+#' @param seeds A vector of length \code{nchains} containing random number
+#' seeds for the MCMC sampler.  If NULL, \code{nchains} random numbers are
+#' generated from R's base random number generator which is controled outside
+#' this routine using \code{set.seed}.  Regardless of the random number
+#' sequence set outside this routine, specifying \code{seeds} will set
+#' the MCMC seeds in JAGS so that exact chains can be reproduced. Note
+#' that \code{set.seed} has no effect on the random number sequences used
+#' in JAGS.  The seeds, whether chosen by this routine or specified, are
+#' stored in the output object.
+#'
+#' @param nburns The number of burn-in steps to take during MCMC sampling.
+#'
+#' @param niters The number of sampling steps to take during MCMC sampling.
+#'
+#' @param nthins The amount of MCMC chain thinning to do.  Every (\code{nthins})-th
+#' sampling iteration (of which there are \code{niters}) is saved, while the
+#' rest are discarded. In the end, a total of \code{niters/nthins} samples from
+#' the posterior are available to the user.
+#'
+#' @param nchains The number of MCMC sampling chains. Specify 2 or more to
+#' check convergence.
+#'
+#' @param nadapt The number of adapting iterations to perform before
+#' burn-in.  During adaptin, JAGS is trying to optimize it's proposal distribution
+#' and stepsize to increase convergence speed.
 #'
 #' @return List containing two components:
 #' \itemize{
@@ -57,7 +83,15 @@
 #' gelman.plot(ieoa$out) # gelmanPlot
 
 
-estimateL.EoA <- function(X, beta.params, Lprior="uniform", Lprior.mean=NULL, Lprior.sd=NULL, LMax=62, conf.level=0.9 ){
+estimateL.EoA <- function(X, beta.params, Lprior="uniform",
+                          Lprior.mean=NULL, Lprior.sd=NULL,
+                          LMax=62, conf.level=0.9,
+                          seeds=NULL,
+                          niters = 10000,
+                          nthins = 10,
+                          nburn  = 50000,
+                          nadapt = 2000,
+                          nchains = 3){
 
 	## ---- bayesModelCode ----
 	if( Lprior == "uniform" ){
@@ -115,25 +149,33 @@ writeLines(jagsModel, "model.txt")
 
 ## ---- initialValues ----
 
-Inits <- function(x){
+Inits <- function(x, seed){
 	if( !is.null(x$lmean) ){
-		list ( lambda=rnorm(1,x$lmean,1/sqrt(x$ltau)), g=rbeta(1, x$alpha, x$beta), .RNG.name="base::Wichmann-Hill", .RNG.seed=93829 )
+		list ( lambda=rnorm(1,x$lmean,1/sqrt(x$ltau)), g=rbeta(1, x$alpha, x$beta),
+		       .RNG.name="base::Mersenne-Twister",
+		       .RNG.seed=seed
+		        )
 	} else {
-		list ( lambda=runif(1,0,x$lambdaMax), g=rbeta(1, x$alpha, x$beta),  .RNG.name="base::Wichmann-Hill", .RNG.seed=65234 )
+		list ( lambda=runif(1,0,x$lambdaMax), g=rbeta(1, x$alpha, x$beta),
+		       .RNG.name="base::Mersenne-Twister",
+		       .RNG.seed=seed
+		       )
 	}
 }
 
-inits = list(  Inits(JAGS.data.0),
-							 Inits(JAGS.data.0),
-							 Inits(JAGS.data.0))
 
+if( is.null(seeds) ){
+  tmp.mult <- 10^(8)
+  seeds <- round(runif(nchains,0,tmp.mult))
+} else if (length(seeds) != nchains) {
+  stop(paste("MCMC random number seeds should be NULL or length", nchains ))
+}
 
-# MCMC sample size settings:
-niters <- 10000
-nthins <- 10
-nburn  <- 50000
-nchains <- 3
-nadapt <- 2000
+inits<-vector("list",nchains)
+for(i in 1:nchains){
+  inits[[i]]<-Inits(JAGS.data.0, seeds[i])
+}
+
 
 
 # Parameters to be monitored by WinBUGS
@@ -195,5 +237,7 @@ l.sd <- sd(tmp[,"lambda"])
 #gelman.plot(out)
 
 
-list(lambda.est=data.frame(lambda=l.50, lambda.sd=l.sd, lambda.lo=l.CI[1], lambda.hi=l.CI[2], ci.level=conf.level), out=out)
+list(lambda.est=data.frame(lambda=l.50, lambda.sd=l.sd, lambda.lo=l.CI[1], lambda.hi=l.CI[2], ci.level=conf.level),
+     out=out,
+     seeds=seeds)
 }
