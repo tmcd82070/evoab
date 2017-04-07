@@ -4,7 +4,8 @@
 \alias{getFleetG}
 \title{getFleetG - Compute all-site (fleetwide) Evidence of Absence g-value.}
 \usage{
-getFleetG(siteYearResults, species = "LBBA", weights = NULL)
+getFleetG(siteYearResults, species = "LBBA", weights = NULL,
+  yearWeights = NULL)
 }
 \arguments{
 \item{siteYearResults}{A data frame containing site-season results.
@@ -31,7 +32,15 @@ facility in the fleet. One row per
 facility.  This is the "DWP" field of \code{eoa}. If \code{weights} = NULL,
 all facilities receive equal weight.  Otherwise, \code{weights} must be
 a data frame containing \code{$facility} and \code{$weight} columns.  This is merged
-with \code{siteYearResults} using \code{$facility} as the key.}
+with \code{siteYearResults} using \code{$facility} as the key. These weights are
+re-scaled to sum to 1.0 in the \code{mixtureBeta} function.}
+
+\item{yearWeights}{When more than one year at a facility is present, this
+parameter allows different weights to be applied across years.  The length
+of this vector must be equal to the number of years of data for all facilities that have
+multiple years of data.  That is, an individual facility can have either 1 or length(yearWeights)
+rows in siteYearResults.  If yearWeights == NULL, equal weights are use. These
+weights are re-scaled to sum to 1.0 inside the \code{mixtureBeta} function.}
 }
 \value{
 The fleet-wide g-value for a particular species.  This

@@ -29,7 +29,15 @@
 #' facility.  This is the "DWP" field of \code{eoa}. If \code{weights} = NULL,
 #' all facilities receive equal weight.  Otherwise, \code{weights} must be
 #' a data frame containing \code{$facility} and \code{$weight} columns.  This is merged
-#' with \code{siteYearResults} using \code{$facility} as the key.
+#' with \code{siteYearResults} using \code{$facility} as the key. These weights are
+#' re-scaled to sum to 1.0 in the \code{mixtureBeta} function.
+#'
+#' @param yearWeights When more than one year at a facility is present, this
+#' parameter allows different weights to be applied across years.  The length
+#' of this vector must be equal to the number of years of data for all facilities that have
+#' multiple years of data.  That is, an individual facility can have either 1 or length(yearWeights)
+#' rows in siteYearResults.  If yearWeights == NULL, equal weights are use. These
+#' weights are re-scaled to sum to 1.0 inside the \code{mixtureBeta} function.
 #'
 #' @return The fleet-wide g-value for a particular species.  This
 #' value can then go into \code{estimateL.eoa}.
@@ -50,13 +58,14 @@
 #'    year = c(2015,2015,2016))
 #' getFleetG(syr, "LBBA")
 
-getFleetG <- function(siteYearResults, species="LBBA", weights=NULL){
+getFleetG <- function(siteYearResults, species="LBBA", weights=NULL, yearWeights=NULL){
 
 	df <- siteYearResults[siteYearResults$species == species, ]
 
 	facilities <- unique(df$facility)
 
 	cat(paste("---- Species =", species, "----\n"))
+
 
 	#	compute or extract facility G's.  Must do this loop because
 	# some facilities were sampled in multiple years.
@@ -73,7 +82,7 @@ getFleetG <- function(siteYearResults, species="LBBA", weights=NULL){
 			}
 
 			# We have multiple years for this facility. Average across years.
-			fac.g <- mixtureBeta(df.fac$gFac.a, df.fac$gFac.b)  # this gives equal weight across years. could change this.
+			fac.g <- mixtureBeta(df.fac$gFac.a, df.fac$gFac.b, w=yearWeights)
 
 			#	Output some results for checking
 			cat( paste0(facilities[i], ": years="))
