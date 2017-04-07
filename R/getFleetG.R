@@ -93,7 +93,7 @@ getFleetG <- function(siteYearResults, species="LBBA", weights=NULL){
 	} else {
 		weights <- weights[,c("facility", "weight")]  # drop other columns, not really necessary
 	}
-	fac.G <- merge(fac.G, weights, by="facility", all=T)
+	fac.G <- merge(fac.G, weights, by="facility", all.x=TRUE)
 
 	#	Some print out to check
 	cat("\n")
