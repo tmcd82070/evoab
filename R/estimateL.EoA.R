@@ -151,7 +151,7 @@ writeLines(jagsModel, "model.txt")
 
 Inits <- function(x, seed){
 	if( !is.null(x$lmean) ){
-		list ( lambda=rnorm(1,x$lmean,1/sqrt(x$ltau)), g=rbeta(1, x$alpha, x$beta),
+		list ( lambda=abs(rnorm(1,x$lmean,1/sqrt(x$ltau))), g=rbeta(1, x$alpha, x$beta),
 		       .RNG.name="base::Mersenne-Twister",
 		       .RNG.seed=seed
 		        )
