@@ -390,7 +390,7 @@ eoa <- function(lambda, beta.params, data, offset,
         logl[i,j] <- a[j]*lambda.covars[i,j]
       }
       offlink[i] <- exp(offset[i])
-      lambda[i] <- offlink[i] * exp(sum(logl[i,]))
+      lambda[i] <- exp(sum(logl[i,]))
     }
 
 		# Likelihood
