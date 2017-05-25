@@ -65,11 +65,11 @@ stored in the output object.}
 \value{
 List containing the following components.
 \itemize{
-  \item \code{M.ests}: A data
+  \item \code{M.ests} : A data
    frame containing the M estimates (point est and confidence interval).
-  \item \code{out} The full MCMC chain object.  Use this to
+  \item \code{out} : The full MCMC chain object.  Use this to
    check convergence, etc.
-  \item \code{seeds} The initial seeds used by JAGS.  Re-use this vector
+  \item \code{seeds} : The initial seeds used by JAGS.  Re-use this vector
   to replicated results exactly.
  }
 }
