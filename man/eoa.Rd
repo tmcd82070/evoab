@@ -72,11 +72,12 @@ the two-tailed confidence level for all these confidence intervals.}
 \item{niters}{The number of sampling steps to take during MCMC sampling.}
 
 \item{nthins}{The amount of MCMC chain thinning to do.  Every (\code{nthins})-th
-sampling iteration (of which there are \code{niters}) is saved, while the
-rest are discarded. In the end, a total of \code{niters/nthins} samples from
+sampling iteration in each chain is saved, while the
+rest are discarded. Each chain has \code{niters} iterations. In
+the end, a total of \code{nchains*niters/nthins} samples from
 the posterior are available to the user.}
 
-\item{nchains}{The number of MCMC sampling chains. Specify 2 or more to
+\item{nchains}{The number of MCMC sampling chains. Must specify 2 or more to
 check convergence.}
 
 \item{nadapt}{The number of adapting iterations to perform before
@@ -89,11 +90,10 @@ and stepsize to increase convergence speed.}
 \item{seeds}{A vector of length \code{nchains} containing random number
 seeds for the MCMC sampler.  If NULL, \code{nchains} random numbers are
 generated from R's base random number generator which is controled outside
-this routine using \code{set.seed}.  Regardless of the random number
-sequence set outside this routine, specifying \code{seeds} will set
-the MCMC seeds in JAGS so that exact chains can be reproduced. Note
+this routine using \code{set.seed}.  Note
 that \code{set.seed} has no effect on the random number sequences used
-in JAGS.  The seeds, whether chosen by this routine or specified, are
+in JAGS because JAGS is a separate package.
+The seeds, whether chosen by this routine or specified, are
 stored in the output object.}
 }
 \value{
@@ -237,6 +237,17 @@ of covariaes. That is, log(lambda[i]) = A[0] + A[1]x[1i] + A[2]x[2i] + etc. If
 an log(offset) term is included, the model is log(lambda[i]/offset[i]) = A[0] + A[1]x[1i] + A[2]x[2i] + etc.
   \item Beta hyper-parameters alpha[i] and beta[i] are constants.
 }
+
+There are two ways
+to obtain the exact same results across multiple
+runs.  One method is to specify
+\code{seeds} here. This will set
+the MCMC seeds in JAGS so that exact chains are reproduced.
+For example, if \code{run1} is the
+result of a previous call, \code{eoa(...,seeds=run1$seeds)}
+will replicate \code{run1} exactly.
+The second method is to use R's default \code{set.seed}
+just before calling this routine.
 }
 \examples{
 # A 3 year study of 7 sites. 21 "cells". lambda change = 20/year
