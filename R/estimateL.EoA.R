@@ -19,10 +19,15 @@
 #' @param Lprior A string naming the prior distribution to use for lambda.
 #' "uniform" uses a uniform prior on [0,\code{LMax}].
 #' "normal" uses a normal(\code{Lprior.mean},\code{Lprior.sd}) prior for lambda.
+#' "gamma" uses a gamma(alpha,beta) prior for lambda, where alpha =
+#' \code{Lprior.mean^2}/\code{Lprior.sd^2} and beta = \code{Lprior.mean}/
+#' \code{Lprior.sd^2} (i.e., alpha and beta are the method of moment estimates
+#' for the shape and rate parameter of a gamma distribution; JAGS uses the shape-rate
+#' parameterization of the gamma).
 #'
-#' @param Lprior.mean Mean of lambda prior when Lprior == "normal".
+#' @param Lprior.mean Mean of lambda prior when Lprior == "normal" or "gamma".
 #'
-#' @param Lprior.sd Standard deviation of normal when Lprior == "normal".
+#' @param Lprior.sd Standard deviation of normal when Lprior == "normal" or "gamma".
 #'
 #' @param LMax Maximum lambda when Lprior = "uniform".  CAREFUL: set this to a number
 #' that is well beyond the upper limit of the confidence interval on lambda.  i.e.,
@@ -141,6 +146,33 @@ estimateL.EoA <- function(X, beta.params, Lprior="uniform",
 												lmean = Lprior.mean,
 												ltau = 1/Lprior.sd^2)
 
+} else if(Lprior== "gamma"){
+  jagsModel <- "model{
+
+  # Priors
+  lambda ~ dgamma(lshape,lrate)
+  g ~ dbeta(alpha, beta)
+
+  M ~ dpois(lambda)
+
+  # Likelihood
+  for( i in 1:nx ){
+  X[i] ~ dbin( g, M )
+  }
+
+  }
+  "
+
+  lshape.mom <- Lprior.mean^2 / Lprior.sd^2
+  lrate.mom <- Lprior.mean / Lprior.sd^2
+
+  JAGS.data.0 <- list ( X = X,
+                        nx = length(X),
+                        alpha = beta.params$alpha,
+                        beta = beta.params$beta,
+                        lshape = lshape.mom,
+                        lrate = lrate.mom)
+
 }
 
 writeLines(jagsModel, "model.txt")
@@ -149,17 +181,23 @@ writeLines(jagsModel, "model.txt")
 
 ## ---- initialValues ----
 
-Inits <- function(x, seed){
-	if( !is.null(x$lmean) ){
+Inits <- function(x, seed, prior){
+	if( prior == "normal" ){
 		list ( lambda=abs(rnorm(1,x$lmean,1/sqrt(x$ltau))), g=rbeta(1, x$alpha, x$beta),
 		       .RNG.name="base::Mersenne-Twister",
 		       .RNG.seed=seed
 		        )
-	} else {
+	} else if( prior == "uniform"){
 		list ( lambda=runif(1,0,x$lambdaMax), g=rbeta(1, x$alpha, x$beta),
 		       .RNG.name="base::Mersenne-Twister",
 		       .RNG.seed=seed
 		       )
+	} else if( prior == "gamma"){
+	  list ( lambda=rgamma(1,shape=x$lshape,rate=x$lrate),
+	         g=rbeta(1, x$alpha, x$beta),
+	         .RNG.name="base::Mersenne-Twister",
+	         .RNG.seed=seed
+	         )
 	}
 }
 
@@ -173,7 +211,7 @@ if( is.null(seeds) ){
 
 inits<-vector("list",nchains)
 for(i in 1:nchains){
-  inits[[i]]<-Inits(JAGS.data.0, seeds[i])
+  inits[[i]]<-Inits(JAGS.data.0, seeds[i], Lprior)
 }
 
 

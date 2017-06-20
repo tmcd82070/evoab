@@ -20,11 +20,16 @@ are computed using function \code{\link{getFleetG}}.}
 
 \item{Lprior}{A string naming the prior distribution to use for lambda.
 "uniform" uses a uniform prior on [0,\code{LMax}].
-"normal" uses a normal(\code{Lprior.mean},\code{Lprior.sd}) prior for lambda.}
+"normal" uses a normal(\code{Lprior.mean},\code{Lprior.sd}) prior for lambda.
+"gamma" uses a gamma(alpha,beta) prior for lambda, where alpha =
+\code{Lprior.mean^2}/\code{Lprior.sd^2} and beta = \code{Lprior.mean}/
+\code{Lprior.sd^2} (i.e., alpha and beta are the method of moment estimates
+for the shape and rate parameter of a gamma distribution; JAGS uses the shape-rate
+parameterization of the gamma).}
 
-\item{Lprior.mean}{Mean of lambda prior when Lprior == "normal".}
+\item{Lprior.mean}{Mean of lambda prior when Lprior == "normal" or "gamma".}
 
-\item{Lprior.sd}{Standard deviation of normal when Lprior == "normal".}
+\item{Lprior.sd}{Standard deviation of normal when Lprior == "normal" or "gamma".}
 
 \item{LMax}{Maximum lambda when Lprior = "uniform".  CAREFUL: set this to a number
 that is well beyond the upper limit of the confidence interval on lambda.  i.e.,
