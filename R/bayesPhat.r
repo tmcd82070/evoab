@@ -117,7 +117,7 @@ bayesPhat <- function(x, n, a=0.5, b=0.5, conf=0.9, ci="eq"){
   if((aPost>1) & (bPost>1)){
     phat.mode <- (aPost-1) / (aPost + bPost - 2)
   } else {
-    phat.mod <- NA
+    phat.mode <- NA
   }
 
   ll <- qbeta((1-conf)/2,aPost,bPost)
