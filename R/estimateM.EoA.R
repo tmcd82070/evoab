@@ -142,6 +142,10 @@ M.x  <- 0:Mmax
 if( Mprior == "normal"){
 	# Use mean and sd passed in
 	M.fx <- dnorm(M.x, Mprior.mean, Mprior.sd)
+} else if(Mprior == "gamma"){
+  shape <- Mprior.mean^2 / Mprior.sd^2
+  scale <- Mprior.sd^2 / Mprior.mean
+  M.fx <- dgamma(M.x, shape = shape, scale = scale )
 } else {
 	#	The following line is the "objective" prior from eoa
 	M.fx <- sqrt(M.x + 1) - sqrt(M.x)   # This matches numbers scraped from eoa. See plotEoaPriors.r
@@ -171,7 +175,7 @@ JAGS.data.0 <- list ( X = X,
 
 Inits <- function(a,b,x,m.max,seed){
   g <- rbeta(1, a, b)
-  m <- x/g
+  m <- (x+1)/g
   m <- m + rnorm(1,0,0.15*m)
   m <- ifelse(m<0, 1, ifelse(m>m.max, m.max-1, round(m)))
   list ( m=m,
@@ -184,8 +188,6 @@ inits<-vector("list",nchains)
 for(i in 1:nchains){
   inits[[i]]<-Inits(JAGS.data.0$alpha, JAGS.data.0$beta, X, Mmax, seeds[i])
 }
-
-
 
 # Parameters to be monitored by WinBUGS
 params <- c("M", "g")
