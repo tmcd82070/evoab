@@ -17,13 +17,21 @@
 #' are computed using function \code{\link{getFleetG}}.
 #'
 #' @param Lprior A string naming the prior distribution to use for lambda.
-#' "uniform" uses a uniform prior on [0,\code{LMax}].
-#' "normal" uses a normal(\code{Lprior.mean},\code{Lprior.sd}) prior for lambda.
-#' "gamma" uses a gamma(alpha,beta) prior for lambda, where alpha =
+#' The following priors are implimented:
+#' \enumerate{
+#'    \item "uniform" : uses a uniform prior on [0,\code{LMax}].
+#'    \item "normal" : uses a normal(\code{Lprior.mean},\code{Lprior.sd}) prior for lambda.
+#'    \item "gamma" : uses a gamma(alpha,beta) prior for lambda, where alpha =
 #' \code{Lprior.mean^2}/\code{Lprior.sd^2} and beta = \code{Lprior.mean}/
 #' \code{Lprior.sd^2} (i.e., alpha and beta are the method of moment estimates
 #' for the shape and rate parameter of a gamma distribution; JAGS uses the shape-rate
 #' parameterization of the gamma).
+#'    \item "objective" : uses a pareto(0.00001,0.25) prior for lambda.  This prior
+#'    if really close to the Jeffery's prior for a poisson random variable.
+#'    The Jeffery's prior for a poisson is x^(-0.5).  Correlation between the Jeffery's
+#'    prior and pareto(0.00001,0.25) is 0.9942.
+#'
+#' }
 #'
 #' @param Lprior.mean Mean of lambda prior when Lprior == "normal" or "gamma".
 #'
@@ -173,7 +181,32 @@ estimateL.EoA <- function(X, beta.params, Lprior="uniform",
                         lshape = lshape.mom,
                         lrate = lrate.mom)
 
+} else if(Lprior== "objective"){
+  jagsModel <- "model{
+
+  # Priors
+  lambda ~ dpar(0.00001,0.25)
+
+  g ~ dbeta(alpha, beta)
+
+  M ~ dpois(lambda)
+
+  # Likelihood
+  for( i in 1:nx ){
+  X[i] ~ dbin( g, M )
+  }
+
 }
+"
+
+JAGS.data.0 <- list ( X = X,
+                      nx = length(X),
+                      alpha = beta.params$alpha,
+                      beta = beta.params$beta
+                      )
+
+}
+
 
 writeLines(jagsModel, "model.txt")
 #cat(jagsModel)
@@ -198,6 +231,12 @@ Inits <- function(x, seed, prior){
 	         .RNG.name="base::Mersenne-Twister",
 	         .RNG.seed=seed
 	         )
+	} else if( prior == "objective"){
+	  list ( lambda=runif(1,0.001, 100),
+	         g=rbeta(1, x$alpha, x$beta),
+	         .RNG.name="base::Mersenne-Twister",
+	         .RNG.seed=seed
+	  )
 	}
 }
 
