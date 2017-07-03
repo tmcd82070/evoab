@@ -4,60 +4,33 @@
 #'
 #' @description  Estimate single-site or multiple-class M (=mortalities)
 #' parameter of Evidence of Absence (EoA)
-#' using either the objective or an
-#' informed prior.
+#' using objective or informed priors.
 #'
 #' @param X Total number of carcasses found.
 #'
-#' @param beta.params A list containing at a minimum components named $alpha and $beta.
+#' @param beta.params A list or data frame containing at a minimum
+#' components named \code{$alpha} and \code{$beta}.
 #' These are the alpha and beta parameters of a Beta distribution which
 #' is used for g=Pr(discovery).
 #'
 #' @param Mprior Character string specifying the prior distribution
-#' for M.  "objective"
-#' uses the objective prior of Dalthorp
-#' i.e., sqrt(m+1)-sqrt(m).  "normal" uses
-#' a normal(Mprior.mean,Mprior.sd) prior for M, discretized to
-#' the integers 0:Mmax.
+#' for M.
+#'  \itemize{
+#'    \item "objective" uses an objective prior very close to the
+#'    Jeffery's prior for a Poisson, i.e., sqrt(m+1)-sqrt(m).
+#'    \item "normal" uses a truncated and descretized normal(Mprior.mean,Mprior.sd).
+#'    \item "gamma" uses a descretized gamma with mean Mprior.mean and
+#'    standard deviation Mprior.sd.  Note, this always assigns zero prior probability
+#'    to M=0.
+#'  }
 #'
-#' @param Mprior.mean Mean of M prior when Mprior == "normal".
+#' @param Mprior.mean Mean of M prior when Mprior == "normal" or "gamma".
 #'
-#' @param Mprior.sd Standard deviation of normal when Mprior == "normal".
+#' @param Mprior.sd Standard deviation of M prior when Mprior == "normal" or "gamma".
 #'
-#' @param Mmax Maximum M.  Set this to be larger than 99-th
-#' percentile of posterior M distribution. Note: run time depends strongly
-#' on this parameter.  Larger Mmax = longer run-time.
 #'
-#' @param conf.level Confidence level for the confidence intervals on M.
-#'
-#' @param nburns The number of burn-in steps per chain to take during MCMC sampling.
-#'
-#' @param niters The number of sampling steps per chain to take during MCMC sampling.
-#'
-#' @param nthins The amount of MCMC chain thinning to do.  Every (\code{nthins})-th
-#' sampling iteration in each chain is saved, while the
-#' rest are discarded. Each chain has \code{niters} iterations. In
-#' the end, a total of \code{nchains*niters/nthins} samples from
-#' the posterior are available to the user.
-#'
-#' @param nchains The number of MCMC sampling chains. Must specify 2 or more to
-#' check convergence.
-#'
-#' @param nadapts The number of adapting iterations to perform before
-#' burn-in.  During adapting, JAGS tries to optimize it's proposal
-#' distribution and stepsize to increase convergence speed.
-#'
-#' @param quiet Logical indicating whether to print any output on the
-#' screen.
-#'
-#' @param seeds A vector of length \code{nchains} containing random number
-#' seeds for the MCMC sampler.  If NULL, \code{nchains} random numbers are
-#' generated from R's base random number generator which is controled outside
-#' this routine using \code{set.seed}.  Note
-#' that \code{set.seed} has no effect on the random number sequences used
-#' in JAGS because JAGS is a separate package.
-#' The seeds, whether chosen by this routine or specified, are
-#' stored in the output object.
+#' @param conf.level Confidence level for the confidence intervals on
+#' posterior estimates of M and g.
 #'
 #'
 #' @details This routine replicates the M estimates of the 'Single Year' and
@@ -66,185 +39,210 @@
 #' with the number of carcasses "X", and specify the "objective" prior. See
 #' Examples.
 #'
-#' Due to discretizing the distribution for M, length of time this
-#' routine takes to run depends on \code{Mmax}.  Larger \code{Mmax}
-#' require much longer run times.
-#'
-#' There are two ways
-#' to obtain the exact same results across multiple
-#' runs.  One method is to specify
-#' \code{seeds} here. This will set
-#' the MCMC seeds in JAGS so that exact chains are reproduced.
-#' For example, if \code{run1} is the
-#' result of a previous call, \code{estimateM.EoA(X,b,seeds=run1$seeds)}
-#' will replicate \code{run1} exactly.
-#' The second method is to use R's default \code{set.seed}
-#' just before calling this routine.
 #'
 #' @return List containing the following components.
 #' \itemize{
-#'   \item \code{M.ests} : A data
-#'    frame containing the M estimates (point est and confidence interval).
-#'   \item \code{out} : The full MCMC chain object.  Use this to
-#'    check convergence, etc.
-#'   \item \code{seeds} : The initial seeds used by JAGS.  Re-use this vector
-#'   to replicated results exactly.
+#'   \item \code{M.est} : A data
+#'    frame containing the following:
+#'    \itemize{
+#'      \item \code{M} = usual point estimate of M = median of M posterior
+#'      distribution.
+#'      \item \code{M.mu} = mean of M posterior distribution
+#'      \item \code{M.sd} = standard deviation of M posterior distribution
+#'      \item \code{M.lo} = lower endpoint of a 100(conf.level)% posterior credible
+#'      interval for M.
+#'      \item \code{M.hi} = upper endpoint of a 100(conf.level)% posterior credible
+#'      interval for M.
+#'      \item \code{g} = mean of g posterior distribution
+#'      \item \code{g.lo} = lower endpoint of a 100(conf.level)% posterior credible
+#'      interval for g.  Note, this does not agree with the analogous number
+#'      from package \code{eoa} because this comes from the posterior for g.
+#'      \code{eoa} reports the quantile from the prior for g.
+#'      \item \code{g.hi} = upper endpoint of a 100(conf.level)% posterior credible
+#'      interval for g. Note, this does not agree with the analogous number
+#'      from package \code{eoa} because this comes from the posterior for g.
+#'      \code{eoa} reports the quantile from the prior for g.
+#'      \item \code{ci.level} = confidence level of the credible intervals (same
+#'      as input \code{conf.level}).
+#'    }
+#'
+#'
+#'   \item \code{M.margin} : the full posterior marginal distribution for M.
+#'   This is a data frame with columns \code{$M}, \code{$pdf.M}, and \code{$cdf.m}
+#'   corresponding to M, probability of M, and probability of being less than or
+#'   equal to M, respectively.  Note, \code{sum(result$M.margin$pdf.M) == 1.0}
+#'
+#'   \item \code{g.margin} : the full posterior marginal distribution for g.
+#'   This is a data frame with columns \code{$g}, \code{$pdf.g}, and \code{$cdf.g}
+#'   corresponding to g, probability of g, and probability of being less than or
+#'   equal to g, respectively. Note, \code{sum(result$g.margin$pdf.g)}
+#'   \code{*diff(result$g.margin$g)[1] == 1.0}.
 #'  }
+#'
+#' @author Trent McDonald
+#'
+#' @seealso \code{\link{estimateL.EoA}}
 #'
 #' @examples
 #' g.params <- list(alpha=600, beta=1200)
 #' X <- 5
-#' m.ests <- estimateM.EoA(X,g.params,Mmax=75)
+#' m.ests <- estimateM.EoA(X,g.params)
+#' print(m.ests$M.est)
 #'
-#' # Nice plots for checking convergence, correlation, density shape, etc.
-#' library(lattice)
-#' xyplot(m.ests$out)
-#' acfplot(m.ests$out, ylim=c(-.2,1), lag.max=100)
-#' densityplot(m.ests$out)
+#' m.ests <- estimateM.EoA(X, g.params, Mprior = "normal", Mprior.mean = 50, Mprior.sd = 30)
+#' print(m.ests$M.est)
 #'
+#' m.ests <- estimateM.EoA(X, g.params, Mprior = "gamma", Mprior.mean = 50, Mprior.sd = 30)
+#' print(m.ests$M.est)
+
 
 estimateM.EoA <- function(X, beta.params, Mprior="objective", Mprior.mean, Mprior.sd,
-                          Mmax=1000, conf.level=0.9,
-                          niters = 10000,
-                          nthins = 10,
-                          nburns  = 20000,
-                          nchains = 3,
-                          nadapts = 2000,
-                          quiet=FALSE,
-                          seeds=NULL){
+                           conf.level=0.9){
 
-	## ---- bayesModelCode ----
+  quants <- c((1-conf.level)/2, 0.5, 1-(1-conf.level)/2)
 
-	jagsModel <- "model{
+  ## ---- gSupport -----
+  zero <- 1e-6  # this really effects accuracy of results, more than length of g.x or M.x
+  support.g <- qbeta(c(zero,1-zero), beta.params$alpha, beta.params$beta)
+  g.x <- seq(support.g[1], support.g[2], length=200)
+  g.fx <- dbeta(g.x, beta.params$alpha, beta.params$beta)
 
-	# Priors
-	m ~ dcat(M.fx)
-	g ~ dbeta(alpha, beta)
+  ## ---- MSupport ----
+  if( Mprior == "normal"){
+    # Use mean and sd passed in
+    support.M <- qnorm(c(zero,1-zero), Mprior.mean, Mprior.sd)
+    Mmax <- ceiling(support.M[2])
+    Mmin <- max(0,floor(support.M[1]))
+    M.x <- seq(Mmin, Mmax, by=1)
+    M.fx <- dnorm(M.x, Mprior.mean, Mprior.sd)
+  } else if(Mprior == "gamma"){
+    shape <- Mprior.mean^2 / Mprior.sd^2
+    scale <- Mprior.sd^2 / Mprior.mean
+    support.M <- qgamma(c(zero,1-zero), shape=shape, scale=scale)
+    Mmax <- ceiling(support.M[2])
+    M.x <- seq(floor(support.M[1]), Mmax, by=1)
+    M.fx <- dgamma(M.x, shape = shape, scale = scale )
+  } else {
+    #	The following line is the "objective" prior from eoa
+    mu.g <- beta.params$alpha / (beta.params$alpha + beta.params$beta)
+    Mmax <- 3*(max(X,1) / mu.g)
+    M.x  <- 0:Mmax
+    M.fx <- sqrt(M.x + 1) - sqrt(M.x)   # This matches numbers scraped from eoa. See plotEoaPriors.r
+  }
 
-	M <- m-1
+  ## ---- thePrior -----
+  prior <- c(outer(M.fx, g.fx, FUN="*"))
 
-	# Likelihood
-	X ~ dbin(g, M)
-}
-"
+  ## ---- Loop until we get all of the distribution
+  # require posterior pdf at (Mmax,gMax) to be less than "zero"
+  support <- expand.grid(M=M.x, g=g.x)
 
-# for( i in 1:nx ){
-# 	X[i] ~ dbin( g, M )
-# }
+  repeat{
 
+    like <- dbinom(X, support$M, support$g)
 
-writeLines(jagsModel, "model.txt")
-#cat(jagsModel)
+    post <- prior * like
+    post <- post / sum(post)
 
-## ---- Mprior ----
-M.x  <- 0:Mmax
+    if( post[length(post)] <= zero){
+      break
+    } else {
+      slp <- mean(diff(post[(length(post)-5):length(post)]))
+      if( slp > 0 ){
+        Mmax <- 2*Mmax
+      } else {
+        Mmax <- ceiling((slp*Mmax - post[length(post)]) / slp)
+      }
+      print(c(slp=slp, Mmax=Mmax))
+    }
 
-if( Mprior == "normal"){
-	# Use mean and sd passed in
-	M.fx <- dnorm(M.x, Mprior.mean, Mprior.sd)
-} else if(Mprior == "gamma"){
-  shape <- Mprior.mean^2 / Mprior.sd^2
-  scale <- Mprior.sd^2 / Mprior.mean
-  M.fx <- dgamma(M.x, shape = shape, scale = scale )
-} else {
-	#	The following line is the "objective" prior from eoa
-	M.fx <- sqrt(M.x + 1) - sqrt(M.x)   # This matches numbers scraped from eoa. See plotEoaPriors.r
-}
+  }
 
-if( is.null(seeds) ){
-  tmp.mult <- 10^(8)
-  seeds <- round(runif(nchains,0,tmp.mult))
-} else if (length(seeds) != nchains) {
-  stop(paste("MCMC random number seeds should be NULL or length", nchains ))
-}
+  # Set cells with prob == "zero" to exactly zero
+  #ind <- post <= zero
+  #post[ind] <- 0
 
+  post <- matrix(post, length(M.x), length(g.x))
 
-## ---- jagsObject -----
+  # The following uses Simpson's rule to integrate and scale the joint
+  # dist'n of M and g.  This is not completely necessary. Set h = 1, then
+  # scale post by post/sum(post) (i.e., forget the Simpson rule stuff)
+  # will get all the estimates and quantiles
+  # correct.  Only issue is that true integral of marginals will not be 1.
+  h <- g.x[2]-g.x[1] # g values must be equally spaced
+  simp.coef <- (h/3)*c(1,rep(c(4,2),(length(g.x)/2)-1),1) # length(g.x) must be even
+  simp.coef <- matrix(simp.coef, length(M.x), length(g.x), byrow=TRUE)
+  intgral <- sum(simp.coef * post)
+  post <- post/intgral
 
+  M.margin <- rowSums(post)
+  g.margin <- colSums(post)
 
+  # Once we go to marginals, M is discrete and g is continuous. Rescale.
+  # Keep in mind, g must have an interval (h) with it.  M does not.
+  M.margin <- M.margin / sum(M.margin)
 
-JAGS.data.0 <- list ( X = X,
-											M.fx = M.fx,
-											alpha = beta.params$alpha,
-											beta = beta.params$beta
-											 )
+  M.cdf <- cumsum(M.margin)
+  g.cdf <- cumsum(g.margin)*h
 
+  #plot(M.x, M.fx)
+  #plot(M.x, like)
+  #lines(M.x, M.margin)
 
+  # Mean
+  mu.M <- sum(M.x * M.margin)
+  mu.g <- sum(g.x * g.margin)*h
 
-## ---- initialValues ----
+  # SD
+  sd.M <- sqrt(sum((M.x - mu.M)^2 * M.margin))
+  sd.g <- sqrt(sum((g.x - mu.g)^2 * g.margin)*h)
+  v.g <- sd.g*sd.g
 
-Inits <- function(a,b,x,m.max,seed){
-  g <- rbeta(1, a, b)
-  m <- (x+1)/g
-  m <- m + rnorm(1,0,0.15*m)
-  m <- ifelse(m<0, 1, ifelse(m>m.max, m.max-1, round(m)))
-  list ( m=m,
-         g=g,
-	       .RNG.name="base::Mersenne-Twister",
-	       .RNG.seed=seed)
-}
-
-inits<-vector("list",nchains)
-for(i in 1:nchains){
-  inits[[i]]<-Inits(JAGS.data.0$alpha, JAGS.data.0$beta, X, Mmax, seeds[i])
-}
-
-# Parameters to be monitored by WinBUGS
-params <- c("M", "g")
-
-
-## ---- jagsRun ----
-
-# Initialize the chains and adapt
-library(rjags)
-(t1=Sys.time())
-jags = jags.model(file="model.txt",
-									data=JAGS.data.0,
-									inits=inits,
-									n.chains=nchains,
-									n.adapt=nadapts,
-									quiet = quiet)
-
-#   Run out in the chain a ways
-if(!quiet) cat("Burning...\n")
-out = update(jags, n.iter=nburns, progress.bar=ifelse(quiet, "none","text"))
-
-# Run the MCMC chains
-if(!quiet) cat("MCMC Sampling...\n")
-out = coda.samples(jags,
-									 variable.names=params,
-									 n.iter=niters,
-									 thin=nthins,
-									 progress.bar=ifelse(quiet, "none","text"))
-
-(t2=Sys.time())
-t3 <- t2-t1
-if(!quiet) cat(paste("Execution time:", round(t3,2), attr(t3,"units"), "\n\n"))
-
-# Check convergence
-conv <- checkIsConverged(out,1.1,quiet)
-
-# Check autocorrelation
-auto <- checkIsAutocorrelated(out, 0.4, 2, quiet)
-
-## ---- mcmcSummary ----
-if(!quiet) print(summary(out))
+  pBa <- mu.g*(mu.g*(1-mu.g)/v.g -1)
+  pBb <- (1-mu.g)*(mu.g*(1-mu.g)/v.g -1)
+  gq <- qbeta(quants,shape1=pBa,shape2=pBb)
 
 
-## ---- quantiles ----
-tmp <- as.matrix(out)
-M.50 <- quantile(tmp[,"M"], 0.5)
-M.CI <- quantile(tmp[,"M"], c((1-conf.level)/2, 1-(1-conf.level)/2))
-
-## ---- STD ----
-# We may never use this
-M.sd <- sd(tmp[,"M"])
+  # Quantiles
+  med.M <- approx(M.cdf, M.x, xout=quants, method="constant", f=1, rule=2)$y
 
 
+  ans <- list(M.est=data.frame(M=med.M[2], M.mu=mu.M, M.sd=sd.M, M.lo=med.M[1],
+                               M.hi=med.M[3], g=mu.g, g.lo=gq[1],
+                               g.hi=gq[3], ci.level=conf.level),
+              M.margin=data.frame(M=M.x, pdf.M=M.margin, cdf.m=M.cdf),
+              g.margin=data.frame(g=g.x, pdf.g=g.margin, cdf.g=g.cdf))
 
-list(M.est=data.frame(M=M.50, M.sd=M.sd, M.lo=M.CI[1],
-                      M.hi=M.CI[2], ci.level=conf.level),
-     out=out,
-     seeds=seeds)
+
+  ans
+
 }
 
+# -------------------------------------------
+
+# Testing code
+# beta.params <- data.frame(alpha = 1306.232, beta = 14095.39)
+# beta.params <- data.frame(alpha = 2306.232, beta = 14095.39)
+# beta.params <- data.frame(alpha = 5306.232, beta = 14095.39)
+# beta.params <- data.frame(alpha = 991.5, beta = 11070)
+# beta.params <- beta.params/1
+#
+# #print(beta.params$alpha/(beta.params$alpha+beta.params$beta))
+#
+#
+# post <- estimateM3.EoA(7, beta.params, conf.level = .95)
+# print(post$M.est)
+#
+# beta.params <- beta.params*4
+# post2 <- estimateM3.EoA(7, beta.params, conf.level = .95)
+# print(post2$M.est)
+#
+# beta.params <- beta.params/100
+# post3 <- estimateM3.EoA(1, beta.params, conf.level = .95)
+# print(post3$M.est)
+#
+# post <- estimateM3.EoA(0, beta.params, Mprior = "normal", Mprior.mean = 50, Mprior.sd = 30, conf.level = .95)
+# print(post$M.est)
+#
+# post <- estimateM3.EoA(0, beta.params, Mprior = "gamma", Mprior.mean = 50, Mprior.sd = 30, conf.level = .95)
+# print(post$M.est)

@@ -5,79 +5,78 @@
 \title{estimateM.EoA}
 \usage{
 estimateM.EoA(X, beta.params, Mprior = "objective", Mprior.mean, Mprior.sd,
-  Mmax = 1000, conf.level = 0.9, niters = 10000, nthins = 10,
-  nburns = 20000, nchains = 3, nadapts = 2000, quiet = FALSE,
-  seeds = NULL)
+  conf.level = 0.9)
 }
 \arguments{
 \item{X}{Total number of carcasses found.}
 
-\item{beta.params}{A list containing at a minimum components named $alpha and $beta.
+\item{beta.params}{A list or data frame containing at a minimum
+components named \code{$alpha} and \code{$beta}.
 These are the alpha and beta parameters of a Beta distribution which
 is used for g=Pr(discovery).}
 
 \item{Mprior}{Character string specifying the prior distribution
-for M.  "objective"
-uses the objective prior of Dalthorp
-i.e., sqrt(m+1)-sqrt(m).  "normal" uses
-a normal(Mprior.mean,Mprior.sd) prior for M, discretized to
-the integers 0:Mmax.}
+for M.
+ \itemize{
+   \item "objective" uses an objective prior very close to the
+   Jeffery's prior for a Poisson, i.e., sqrt(m+1)-sqrt(m).
+   \item "normal" uses a truncated and descretized normal(Mprior.mean,Mprior.sd).
+   \item "gamma" uses a descretized gamma with mean Mprior.mean and
+   standard deviation Mprior.sd.  Note, this always assigns zero prior probability
+   to M=0.
+ }}
 
-\item{Mprior.mean}{Mean of M prior when Mprior == "normal".}
+\item{Mprior.mean}{Mean of M prior when Mprior == "normal" or "gamma".}
 
-\item{Mprior.sd}{Standard deviation of normal when Mprior == "normal".}
+\item{Mprior.sd}{Standard deviation of M prior when Mprior == "normal" or "gamma".}
 
-\item{Mmax}{Maximum M.  Set this to be larger than 99-th
-percentile of posterior M distribution. Note: run time depends strongly
-on this parameter.  Larger Mmax = longer run-time.}
-
-\item{conf.level}{Confidence level for the confidence intervals on M.}
-
-\item{niters}{The number of sampling steps per chain to take during MCMC sampling.}
-
-\item{nthins}{The amount of MCMC chain thinning to do.  Every (\code{nthins})-th
-sampling iteration in each chain is saved, while the
-rest are discarded. Each chain has \code{niters} iterations. In
-the end, a total of \code{nchains*niters/nthins} samples from
-the posterior are available to the user.}
-
-\item{nburns}{The number of burn-in steps per chain to take during MCMC sampling.}
-
-\item{nchains}{The number of MCMC sampling chains. Must specify 2 or more to
-check convergence.}
-
-\item{nadapts}{The number of adapting iterations to perform before
-burn-in.  During adapting, JAGS tries to optimize it's proposal
-distribution and stepsize to increase convergence speed.}
-
-\item{quiet}{Logical indicating whether to print any output on the
-screen.}
-
-\item{seeds}{A vector of length \code{nchains} containing random number
-seeds for the MCMC sampler.  If NULL, \code{nchains} random numbers are
-generated from R's base random number generator which is controled outside
-this routine using \code{set.seed}.  Note
-that \code{set.seed} has no effect on the random number sequences used
-in JAGS because JAGS is a separate package.
-The seeds, whether chosen by this routine or specified, are
-stored in the output object.}
+\item{conf.level}{Confidence level for the confidence intervals on
+posterior estimates of M and g.}
 }
 \value{
 List containing the following components.
 \itemize{
-  \item \code{M.ests} : A data
-   frame containing the M estimates (point est and confidence interval).
-  \item \code{out} : The full MCMC chain object.  Use this to
-   check convergence, etc.
-  \item \code{seeds} : The initial seeds used by JAGS.  Re-use this vector
-  to replicated results exactly.
+  \item \code{M.est} : A data
+   frame containing the following:
+   \itemize{
+     \item \code{M} = usual point estimate of M = median of M posterior
+     distribution.
+     \item \code{M.mu} = mean of M posterior distribution
+     \item \code{M.sd} = standard deviation of M posterior distribution
+     \item \code{M.lo} = lower endpoint of a 100(conf.level)% posterior credible
+     interval for M.
+     \item \code{M.hi} = upper endpoint of a 100(conf.level)% posterior credible
+     interval for M.
+     \item \code{g} = mean of g posterior distribution
+     \item \code{g.lo} = lower endpoint of a 100(conf.level)% posterior credible
+     interval for g.  Note, this does not agree with the analogous number
+     from package \code{eoa} because this comes from the posterior for g.
+     \code{eoa} reports the quantile from the prior for g.
+     \item \code{g.hi} = upper endpoint of a 100(conf.level)% posterior credible
+     interval for g. Note, this does not agree with the analogous number
+     from package \code{eoa} because this comes from the posterior for g.
+     \code{eoa} reports the quantile from the prior for g.
+     \item \code{ci.level} = confidence level of the credible intervals (same
+     as input \code{conf.level}).
+   }
+
+
+  \item \code{M.margin} : the full posterior marginal distribution for M.
+  This is a data frame with columns \code{$M}, \code{$pdf.M}, and \code{$cdf.m}
+  corresponding to M, probability of M, and probability of being less than or
+  equal to M, respectively.  Note, \code{sum(result$M.margin$pdf.M) == 1.0}
+
+  \item \code{g.margin} : the full posterior marginal distribution for g.
+  This is a data frame with columns \code{$g}, \code{$pdf.g}, and \code{$cdf.g}
+  corresponding to g, probability of g, and probability of being less than or
+  equal to g, respectively. Note, \code{sum(result$g.margin$pdf.g)}
+  \code{*diff(result$g.margin$g)[1] == 1.0}.
  }
 }
 \description{
 Estimate single-site or multiple-class M (=mortalities)
 parameter of Evidence of Absence (EoA)
-using either the objective or an
-informed prior.
+using objective or informed priors.
 }
 \details{
 This routine replicates the M estimates of the 'Single Year' and
@@ -85,31 +84,22 @@ This routine replicates the M estimates of the 'Single Year' and
 input the composite g parameter's "a" and "b" parameters here, along
 with the number of carcasses "X", and specify the "objective" prior. See
 Examples.
-
-Due to discretizing the distribution for M, length of time this
-routine takes to run depends on \code{Mmax}.  Larger \code{Mmax}
-require much longer run times.
-
-There are two ways
-to obtain the exact same results across multiple
-runs.  One method is to specify
-\code{seeds} here. This will set
-the MCMC seeds in JAGS so that exact chains are reproduced.
-For example, if \code{run1} is the
-result of a previous call, \code{estimateM.EoA(X,b,seeds=run1$seeds)}
-will replicate \code{run1} exactly.
-The second method is to use R's default \code{set.seed}
-just before calling this routine.
 }
 \examples{
 g.params <- list(alpha=600, beta=1200)
 X <- 5
-m.ests <- estimateM.EoA(X,g.params,Mmax=75)
+m.ests <- estimateM.EoA(X,g.params)
+print(m.ests$M.est)
 
-# Nice plots for checking convergence, correlation, density shape, etc.
-library(lattice)
-xyplot(m.ests$out)
-acfplot(m.ests$out, ylim=c(-.2,1), lag.max=100)
-densityplot(m.ests$out)
+m.ests <- estimateM.EoA(X, g.params, Mprior = "normal", Mprior.mean = 50, Mprior.sd = 30)
+print(m.ests$M.est)
 
+m.ests <- estimateM.EoA(X, g.params, Mprior = "gamma", Mprior.mean = 50, Mprior.sd = 30)
+print(m.ests$M.est)
+}
+\seealso{
+\code{\link{estimateL.EoA}}
+}
+\author{
+Trent McDonald
 }
