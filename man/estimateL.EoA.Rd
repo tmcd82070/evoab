@@ -19,13 +19,21 @@ These are the all-site alpha and beta parameters for g. In many cases, these par
 are computed using function \code{\link{getFleetG}}.}
 
 \item{Lprior}{A string naming the prior distribution to use for lambda.
-"uniform" uses a uniform prior on [0,\code{LMax}].
-"normal" uses a normal(\code{Lprior.mean},\code{Lprior.sd}) prior for lambda.
-"gamma" uses a gamma(alpha,beta) prior for lambda, where alpha =
+The following priors are implimented:
+\enumerate{
+   \item "uniform" : uses a uniform prior on [0,\code{LMax}].
+   \item "normal" : uses a normal(\code{Lprior.mean},\code{Lprior.sd}) prior for lambda.
+   \item "gamma" : uses a gamma(alpha,beta) prior for lambda, where alpha =
 \code{Lprior.mean^2}/\code{Lprior.sd^2} and beta = \code{Lprior.mean}/
 \code{Lprior.sd^2} (i.e., alpha and beta are the method of moment estimates
 for the shape and rate parameter of a gamma distribution; JAGS uses the shape-rate
-parameterization of the gamma).}
+parameterization of the gamma).
+   \item "objective" : uses a pareto(0.00001,0.25) prior for lambda.  This prior
+   if really close to the Jeffery's prior for a poisson random variable.
+   The Jeffery's prior for a poisson is x^(-0.5).  Correlation between the Jeffery's
+   prior and pareto(0.00001,0.25) is 0.9942.
+
+}}
 
 \item{Lprior.mean}{Mean of lambda prior when Lprior == "normal" or "gamma".}
 
