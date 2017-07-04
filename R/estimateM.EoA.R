@@ -213,6 +213,7 @@ estimateM.EoA <- function(X, beta.params, Mprior="objective", Mprior.mean, Mprio
               M.margin=data.frame(M=M.x, pdf.M=M.margin, cdf.m=M.cdf),
               g.margin=data.frame(g=g.x, pdf.g=g.margin, cdf.g=g.cdf))
 
+  class(ans) <- c("Mest","evoab")
 
   ans
 
@@ -230,7 +231,7 @@ estimateM.EoA <- function(X, beta.params, Mprior="objective", Mprior.mean, Mprio
 # #print(beta.params$alpha/(beta.params$alpha+beta.params$beta))
 #
 #
-# post <- estimateM3.EoA(7, beta.params, conf.level = .95)
+# post <- estimateM.EoA(7, beta.params, conf.level = .95)
 # print(post$M.est)
 #
 # beta.params <- beta.params*4
