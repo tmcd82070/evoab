@@ -62,9 +62,19 @@ List containing the following components.
 
 
   \item \code{M.margin} : the full posterior marginal distribution for M.
-  This is a data frame with columns \code{$M}, \code{$pdf.M}, and \code{$cdf.m}
-  corresponding to M, probability of M, and probability of being less than or
-  equal to M, respectively.  Note, \code{sum(result$M.margin$pdf.M) == 1.0}
+  This is a data frame with the following columns
+  \itemize{
+
+    \item \code{M} : value of M in its support.
+    \item \code{pdf} : posterior probability mass function for M.  Pr(M=m)
+    \item \code{cdf} : posterior cummulative probability mass function for M.
+    Pr(M<=m).
+    \item \code{prior.pdf} : prior probability mass function for M.
+    \item \code{like.pdf} : likelihood probability mass function for M.
+  }
+  Note, all three of the pdf columns sum to 1.0, even in the
+  case of an improper prior. These columns can be plotted together
+  using the plot method for \code{Mest} objects.
 
   \item \code{g.margin} : the full posterior marginal distribution for g.
   This is a data frame with columns \code{$g}, \code{$pdf.g}, and \code{$cdf.g}
@@ -98,7 +108,7 @@ m.ests <- estimateM.EoA(X, g.params, Mprior = "gamma", Mprior.mean = 50, Mprior.
 print(m.ests$M.est)
 }
 \seealso{
-\code{\link{estimateL.EoA}}
+\code{\link{estimateL.EoA}}, \code{\link{plot.Mest}}
 }
 \author{
 Trent McDonald

@@ -68,9 +68,19 @@
 #'
 #'
 #'   \item \code{M.margin} : the full posterior marginal distribution for M.
-#'   This is a data frame with columns \code{$M}, \code{$pdf.M}, and \code{$cdf.m}
-#'   corresponding to M, probability of M, and probability of being less than or
-#'   equal to M, respectively.  Note, \code{sum(result$M.margin$pdf.M) == 1.0}
+#'   This is a data frame with the following columns
+#'   \itemize{
+#'
+#'     \item \code{M} : value of M in its support.
+#'     \item \code{pdf} : posterior probability mass function for M.  Pr(M=m)
+#'     \item \code{cdf} : posterior cummulative probability mass function for M.
+#'     Pr(M<=m).
+#'     \item \code{prior.pdf} : prior probability mass function for M.
+#'     \item \code{like.pdf} : likelihood probability mass function for M.
+#'   }
+#'   Note, all three of the pdf columns sum to 1.0, even in the
+#'   case of an improper prior. These columns can be plotted together
+#'   using the plot method for \code{Mest} objects.
 #'
 #'   \item \code{g.margin} : the full posterior marginal distribution for g.
 #'   This is a data frame with columns \code{$g}, \code{$pdf.g}, and \code{$cdf.g}
@@ -81,7 +91,7 @@
 #'
 #' @author Trent McDonald
 #'
-#' @seealso \code{\link{estimateL.EoA}}
+#' @seealso \code{\link{estimateL.EoA}}, \code{\link{plot.Mest}}
 #'
 #' @examples
 #' g.params <- list(alpha=600, beta=1200)
@@ -120,13 +130,15 @@ estimateM.EoA <- function(X, beta.params, Mprior="objective", Mprior.mean, Mprio
     scale <- Mprior.sd^2 / Mprior.mean
     support.M <- qgamma(c(zero,1-zero), shape=shape, scale=scale)
     Mmax <- ceiling(support.M[2])
-    M.x <- seq(floor(support.M[1]), Mmax, by=1)
+    Mmin <- floor(support.M[1])
+    M.x <- seq(Mmin, Mmax, by=1)
     M.fx <- dgamma(M.x, shape = shape, scale = scale )
   } else {
     #	The following line is the "objective" prior from eoa
     mu.g <- beta.params$alpha / (beta.params$alpha + beta.params$beta)
-    Mmax <- 3*(max(X,1) / mu.g)
-    M.x  <- 0:Mmax
+    Mmax <- ceiling(3*(max(X,1) / mu.g))
+    Mmin <- 0
+    M.x  <- Mmin:Mmax
     M.fx <- sqrt(M.x + 1) - sqrt(M.x)   # This matches numbers scraped from eoa. See plotEoaPriors.r
   }
 
@@ -137,53 +149,68 @@ estimateM.EoA <- function(X, beta.params, Mprior="objective", Mprior.mean, Mprio
   # require posterior pdf at (Mmax,gMax) to be less than "zero"
   support <- expand.grid(M=M.x, g=g.x)
 
+  # The following sets up use of Simpson's rule to integrate and scale the joint
+  # dist'n of M and g.  This is not completely necessary. Setting h = 1 (below), then
+  # scaling post by post/sum(post) (i.e., forget the Simpson rule stuff)
+  # will get all the estimates and quantiles
+  # correct.  Only issue is that true integral of marginals will not be 1, and
+  # this is important because I use a probability cutoff to decide on Mmax.
+
+  h <- g.x[2]-g.x[1] # g values MUST be equally spaced. They are in gSupport section above
+  simp.coef <- (h/3)*c(1,rep(c(4,2),(length(g.x)/2)-1),1) # length(g.x) must be even
+
   repeat{
 
     like <- dbinom(X, support$M, support$g)
 
     post <- prior * like
-    post <- post / sum(post)
+    post <- matrix(post, length(M.x), length(g.x))
 
-    if( post[length(post)] <= zero){
+    simp.coef.mat <- matrix(simp.coef, length(M.x), length(g.x), byrow=TRUE)
+
+    intgral <- sum(simp.coef.mat * post)
+    post <- post/intgral
+
+    M.margin <- rowSums(post)
+    g.margin <- colSums(post)
+
+    # Once we go to marginals, M is discrete and g is continuous. Rescale.
+    # Keep in mind, g must have an interval (h) with it.  M does not.
+    M.margin <- M.margin / sum(M.margin)
+
+    if( M.margin[length(M.x)] <= zero){
       break
     } else {
-      slp <- mean(diff(post[(length(post)-5):length(post)]))
+      Mmax.prev <- Mmax
+      slp <- mean(diff(M.margin[(length(M.x)-5):length(M.x)]))
       if( slp > 0 ){
         Mmax <- 2*Mmax
       } else {
-        Mmax <- ceiling((slp*Mmax - post[length(post)]) / slp)
+        Mmax <- ceiling((slp*Mmax - M.margin[length(M.x)]) / slp)
       }
-      print(c(slp=slp, Mmax=Mmax))
+      cat(paste0("Pr(M=Mmax)=", round(M.margin[length(M.x)],6),
+                 ". Expanding Mmax from ", Mmax.prev, " to ", Mmax, "\n"))
+
+      if( Mprior == "normal"){
+        M.x <- seq(Mmin, Mmax, by=1)
+        M.fx <- dnorm(M.x, Mprior.mean, Mprior.sd)
+      } else if(Mprior == "gamma"){
+        M.x <- seq(Mmin, Mmax, by=1)
+        M.fx <- dgamma(M.x, shape = shape, scale = scale )
+      } else {
+        M.x  <- Mmin:Mmax
+        M.fx <- sqrt(M.x + 1) - sqrt(M.x)   # This matches numbers scraped from eoa. See plotEoaPriors.r
+      }
+      # must recompute prior to accomodate expanded M
+      prior <- c(outer(M.fx, g.fx, FUN="*"))
+      support <- expand.grid(M=M.x, g=g.x)
+
     }
 
   }
 
-  # Set cells with prob == "zero" to exactly zero
-  #ind <- post <= zero
-  #post[ind] <- 0
-
-  post <- matrix(post, length(M.x), length(g.x))
-
-  # The following uses Simpson's rule to integrate and scale the joint
-  # dist'n of M and g.  This is not completely necessary. Set h = 1, then
-  # scale post by post/sum(post) (i.e., forget the Simpson rule stuff)
-  # will get all the estimates and quantiles
-  # correct.  Only issue is that true integral of marginals will not be 1.
-  h <- g.x[2]-g.x[1] # g values must be equally spaced
-  simp.coef <- (h/3)*c(1,rep(c(4,2),(length(g.x)/2)-1),1) # length(g.x) must be even
-  simp.coef <- matrix(simp.coef, length(M.x), length(g.x), byrow=TRUE)
-  intgral <- sum(simp.coef * post)
-  post <- post/intgral
-
-  M.margin <- rowSums(post)
-  g.margin <- colSums(post)
-
-  # Once we go to marginals, M is discrete and g is continuous. Rescale.
-  # Keep in mind, g must have an interval (h) with it.  M does not.
-  M.margin <- M.margin / sum(M.margin)
-
   M.cdf <- cumsum(M.margin)
-  g.cdf <- cumsum(g.margin)*h
+  g.cdf <- cumsum(g.margin)*h  # note inclusion of h here, and in moment computations below.
 
   #plot(M.x, M.fx)
   #plot(M.x, like)
@@ -206,11 +233,17 @@ estimateM.EoA <- function(X, beta.params, Mprior="objective", Mprior.mean, Mprio
   # Quantiles
   med.M <- approx(M.cdf, M.x, xout=quants, method="constant", f=1, rule=2)$y
 
+  # Save likelihood and prior for plotting later
+  like <- matrix(like, length(M.x), length(g.x))
+  like.M <- rowSums(like)
+  like.M <- like.M / sum(like.M)
+  M.fx <- M.fx / sum(M.fx)
 
   ans <- list(M.est=data.frame(M=med.M[2], M.mu=mu.M, M.sd=sd.M, M.lo=med.M[1],
                                M.hi=med.M[3], g=mu.g, g.lo=gq[1],
                                g.hi=gq[3], ci.level=conf.level),
-              M.margin=data.frame(M=M.x, pdf.M=M.margin, cdf.m=M.cdf),
+              M.margin=data.frame(M=M.x, pdf=M.margin, cdf=M.cdf,
+                                  prior.pdf=M.fx, like.pdf=like.M),
               g.margin=data.frame(g=g.x, pdf.g=g.margin, cdf.g=g.cdf))
 
   class(ans) <- c("Mest","evoab")

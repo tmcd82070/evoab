@@ -2,16 +2,17 @@
 #'
 #' @title Plot M posterior distribution
 #'
-#' @description Plot the M (from \code{evoab}) posterior distribution.
+#' @description Plot method for the M estimates
+#' (from \code{evoab}) posterior distribution.
 #'
 #' @param obj An object of class "Mest".  Usually output by the
 #' routine \code{estimateM.EoA}.
 #'
 #'
-plot.Mest <- function(obj){
+plot.Mest <- function(obj, plot.like=FALSE, plot.prior=FALSE){
 
   x <- obj$M.margin$M
-  fx <- obj$M.margin$pdf.M
+  fx <- obj$M.margin$pdf
   max.fx <- max(fx)
   ml <- obj$M.est$M.lo
   mh <- obj$M.est$M.hi
@@ -21,7 +22,21 @@ plot.Mest <- function(obj){
   old.par <- par()
   par(mar=c(5.1,4.1,1,1))
 
-  plot(x, fx, type="l", lwd=2,
+  rng.x <- range(x)
+
+  if(plot.like & plot.prior){
+    rng.fx <- range(fx, obj$M.margin$like.pdf, obj$M.margin$prior.pdf)
+  } else if( !plot.like & plot.prior){
+    rng.fx <- range(fx, obj$M.margin$prior.pdf)
+  } else if( plot.like & !plot.prior){
+    rng.fx <- range(fx, obj$M.margin$like.pdf)
+  } else if( !plot.like & !plot.prior){
+    rng.fx <- range(fx)
+  }
+  max.fx <- rng.fx[2]
+
+
+  plot(rng.x, rng.fx, type="n", lwd=2,
        xlab="Mortalities (M)", ylab="",
        yaxt="n", ylim=c(0,max.fx*1.7), bty="n")
   axis(2, at=pretty(c(0,max.fx)))
@@ -33,7 +48,26 @@ plot.Mest <- function(obj){
   ci.poly.x <- ci.poly.x[midInterval]
   ci.poly.y <- ci.poly.y[midInterval]
 
-  polygon(ci.poly.x, ci.poly.y, col="cornsilk", border=NA)
+  doTheLegend <- FALSE
+  legEntries <- c("Posterior")
+  legCols <- c("black")
+  if(plot.like){
+    lines(x, obj$M.margin$like.pdf, lwd=2, col="blue")
+    doTheLegend <- TRUE
+    legEntries <- c("Likelihood",legEntries)
+    legCols <- c("blue", legCols)
+  }
+  if(plot.prior){
+    lines(x, obj$M.margin$prior.pdf, lwd=2, col="red")
+    doTheLegend <- TRUE
+    legEntries <- c("Prior",legEntries)
+    legCols <- c("red", legCols)
+  }
+  if(!plot.prior & !plot.like){
+    polygon(ci.poly.x, ci.poly.y, col="cornsilk", border=NA)
+  }
+  lines(x, fx, lwd=2 )
+
 
   oneLineHgt <- par("cxy")[2]
   segments(ml,max.fx+4*oneLineHgt,mh,max.fx+4*oneLineHgt,col='grey60',lwd=13)
@@ -47,13 +81,17 @@ plot.Mest <- function(obj){
 
   text(M,max.fx+5.5*oneLineHgt,paste("Estimate:\n median=",format(M,big.mark=",")),
        cex=.8,font=2,family="sans",col='darkslategray')
-  text(ml,max.fx+2*oneLineHgt,paste0("LOWER\n",conf.level,"% Conf\n",format(ml,big.mark=",")),cex=.7,col="darkred",font=2,family="sans")
 
-  text(mh,max.fx+2*oneLineHgt,paste0("UPPER\n",conf.level,"% Conf\n",format(mh,big.mark=",")),cex=.7,col="darkred",font=2,family="sans")
+  text(ml,max.fx+2*oneLineHgt,paste0("LOWER\n",conf.level,"% Conf\n",format(ml,big.mark=",")),
+       cex=.7,col="darkred",font=2,family="sans",xpd=NA)
 
-  #main.label<- verboseModels
-  #assign('main.label',main.label,envir = serverProtected)
+  text(mh,max.fx+2*oneLineHgt,paste0("UPPER\n",conf.level,"% Conf\n",format(mh,big.mark=",")),
+       cex=.7,col="darkred",font=2,family="sans",xpd=NA)
 
-  # segments(0,0,ml,0)
+  if(doTheLegend){
+    legend("topright",legend=legEntries, lty=1, col=legCols, lwd=2,
+           inset=c(0,1-(max.fx/(max.fx+6*oneLineHgt))), cex=0.75)
+  }
+
 
 }

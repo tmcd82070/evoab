@@ -4,12 +4,13 @@
 \alias{plot.Mest}
 \title{Plot M posterior distribution}
 \usage{
-\method{plot}{Mest}(obj)
+\method{plot}{Mest}(obj, plot.like = FALSE, plot.prior = FALSE)
 }
 \arguments{
 \item{obj}{An object of class "Mest".  Usually output by the
 routine \code{estimateM.EoA}.}
 }
 \description{
-Plot the M (from \code{evoab}) posterior distribution.
+Plot method for the M estimates
+(from \code{evoab}) posterior distribution.
 }
