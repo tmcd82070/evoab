@@ -9,8 +9,26 @@
 \arguments{
 \item{obj}{An object of class "Mest".  Usually output by the
 routine \code{estimateM.EoA}.}
+
+\item{plot.like}{Logical for whether to plot the likelihood for M as
+well as the posterior.}
+
+\item{plot.prior}{Logical for whether to plot the prior for M as well
+as the posterior.}
 }
 \description{
 Plot method for the M estimates
 (from \code{evoab}) posterior distribution.
+}
+\details{
+\code{plot.like} and \code{plot.prior} are additive. Set both
+to TRUE and the prior, likelihood, and posterior will all three be plotted.
+If neither \code{plot.like} nor \code{plot.prior} are TRUE, the posterior
+distribution is plotted.
+}
+\seealso{
+\code{\link{estimateM.EoA}}
+}
+\author{
+Trent McDonald
 }
