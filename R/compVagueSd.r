@@ -41,6 +41,10 @@ compVagueSd<- function(Y,alpha.vec,beta.vec,X, range.multiplier=100){
   M <- log(Y+m.c) - log(g + min(g)*m.c)
 
   lm.fit <- lm( M ~ -1+X )
+  if( sum(!is.na(lm.fit$coefficients)) != ncol(X) ){
+    stop("Multicolinearity in the model.")
+  }
+
   lm.fit <- summary(lm.fit)$coefficients
 
   coef.range <- abs(lm.fit[,"Estimate"]) + 2*lm.fit[,"Std. Error"]

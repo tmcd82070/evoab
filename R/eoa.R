@@ -347,6 +347,7 @@ eoa <- function(lambda, beta.params, data, offset,
   # Use vague normal priors for coefficients (huge SE's) by default
   sd.n.start <- compVagueSd(Y,alpha.vec,beta.vec,lambda.covars, range.multiplier = 100)
   coefTaus <- sd.n.start$vagueSd
+
   coefMus <- rep(0,ncovars)
   names(coefMus)<-vnames
   if(is.vector(priors)){
