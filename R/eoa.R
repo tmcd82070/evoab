@@ -367,7 +367,7 @@ eoa <- function(lambda, beta.params, data, offset,
     } else if(!any(row.names(priors) %in% vnames)){
       warning(paste("No row.names(priors) matched parameter names. Vague priors used."))
     } else {
-      fnd <- names(coefMus) %in% rownames(prior)
+      fnd <- names(coefMus) %in% rownames(priors)
       coefMus[fnd] <- priors[names(coefMus)[fnd], "mean"]
       coefTaus[fnd] <- priors[names(coefTaus)[fnd], "sd"]
     }
