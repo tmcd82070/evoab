@@ -32,6 +32,7 @@
 #' eoa.1 <- eoa(Y~year, g, df, nburn = 1000, niters= 50*10, nthins = 10 )
 #'
 #' summary(eoa.1)
+#'
 summary.eoa <- function(obj){
 
   cat("Call:\n")

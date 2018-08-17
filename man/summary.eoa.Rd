@@ -34,6 +34,7 @@ df <- data.frame(year=factor(c(rep("2015",ny),rep("2016",ny),rep("2017",ny))),
 eoa.1 <- eoa(Y~year, g, df, nburn = 1000, niters= 50*10, nthins = 10 )
 
 summary(eoa.1)
+
 }
 \seealso{
 \code{\link{eoa}}, \code{\link{coef.eoa}}.

@@ -4,8 +4,8 @@
 \alias{update.eoa}
 \title{update.eoa - Update method for EoA objects}
 \usage{
-\method{update}{eoa}(obj, niters, nburns = 0, nthins = 1, add = FALSE,
-  quiet = FALSE)
+\method{update}{eoa}(obj, niters, nburns = 0, nthins = 1,
+  add = FALSE, quiet = FALSE)
 }
 \arguments{
 \item{obj}{An object of class \code{eoa}.  See function \code{\link{eoa}}.}

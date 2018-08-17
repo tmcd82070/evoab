@@ -146,9 +146,6 @@ An object of class "eoa".  Eoa objects are a lists containing the following comp
   There is exactly one row in the output \code{priors} for every parameter,
   while that is not necessarily true for the input.
 
-  \item \code{design.mat} : the lambda model's design matrix containing
-  covariates values.
-
   \item \code{seeds} : the vector of MCMC random number seeds actually used
   in the analysis.  Specify these as input seeds to repeat, exactly, the MCMC
   sampling.
@@ -227,7 +224,7 @@ Parameter \code{Mtot} is the sum of all \code{M} parameters in the analysis.
 This derived parameters may not mean anything in specific problems, but is
 a fairly common derived parameter.
 
-The EoA model implemented here is as follows:
+The EoA model implemented here is :
 \enumerate{
   \item Target count Y[i] is assumed to be binomial(M[i],g[i]).
   \item Binomial index M[i] is assumed to be poisson(lambda[i]).
@@ -306,7 +303,8 @@ qqmath(ieoa$out[,c("(Intercept)","year2016","year2017")])
 
 }
 \seealso{
-\code{\link{labels.eoa}}, \code{\link{coef.eoa}}
+\code{\link{labels.eoa}}, \code{\link{coef.eoa}},
+\code{\link{predict.eoa}}, \code{\link{model.matrix.eoa}}
 }
 \author{
 Trent McDonald

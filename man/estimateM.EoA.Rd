@@ -4,8 +4,8 @@
 \alias{estimateM.EoA}
 \title{estimateM.EoA}
 \usage{
-estimateM.EoA(X, beta.params, Mprior = "objective", Mprior.mean, Mprior.sd,
-  conf.level = 0.9)
+estimateM.EoA(X, beta.params, Mprior = "objective", Mprior.mean,
+  Mprior.sd, conf.level = 0.9)
 }
 \arguments{
 \item{X}{Total number of carcasses found.}

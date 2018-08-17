@@ -15,6 +15,9 @@ Parameter type possibilities are "coef" or
 If \code{type} is not "coef" and not "derived" and the regular expression
 fails to match anything, all parameter labels.}
 }
+\description{
+labels.eoa - Extract parameter labels from \code{eoa} objects.
+}
 \details{
 Coefficient labels are for variables in the log-linear model for
 lambda.  Derived parameter labels are non-coefficient parameters link
