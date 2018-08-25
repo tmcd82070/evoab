@@ -54,7 +54,9 @@ are sufficiently large enough to be considered vague.
 If \code{priors} is not NULL, it should be a data frame containing
 at a minimum \code{$mean} and \code{$sd} specifying the
 mean and standard deviation of a normal prior for coefficients in the
-lambda model.  The \code{row.names} of \code{priors} are matched to
+lambda model.  Remember that coefficients are on the log scale, do not
+specify means on the response (i.e., count) scale. Provide log(count) means.
+The \code{row.names} of \code{priors} are matched to
 coefficients, and this provides a way to use informed priors for some
 coefficients and vague priors for others.  For example, if \code{X1} and
 \code{X2} are both in the model and \code{priors}

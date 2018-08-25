@@ -4,7 +4,7 @@
 \alias{model.matrix.eoa}
 \title{model.matrix.eoa}
 \usage{
-\method{model.matrix}{eoa}(object, ...)
+\method{model.matrix}{eoa}(object, data, ...)
 }
 \arguments{
 \item{object}{An object of class \code{eoa}. In particular,
