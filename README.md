@@ -73,11 +73,11 @@ The following uses informed distributions:
 
 
 `# Assume prior mean is 10 and prior sd is 3`  
-`# Fit intercept-only model to get one mean lambda
-intMean <- 2*log(10) - 0.5*log(3^2 + 10^2)
-intSd <- sqrt(-2*log(10) + log(3^2 + 10^2))
-prior <- data.frame(mean=intMean, sd=intSd, row.names="(Intercept)")
-eoa.1 <- eoa(Y~1, g, df, priors=prior )`
+`# Fit intercept-only model to get one mean lambda`
+`intMean <- 2*log(10) - 0.5*log(3^2 + 10^2)`
+`intSd <- sqrt(-2*log(10) + log(3^2 + 10^2))`
+`prior <- data.frame(mean=intMean, sd=intSd, row.names="(Intercept)")`
+`eoa.1 <- eoa(Y~1, g, df, priors=prior )`
 
 
 After either run, you should check convergence.  
@@ -85,9 +85,9 @@ To do so, run a traceplot and Gelman stats.  Any Rhats > 1.1 indicate suspect
 convergence. The following commands are useful for inspecting 
 mixing and convergence:
 
-`library(lattice)  
-xyplot(ieoa.1$out[,labels(ieoa.1)])  
-acfplot(ieoa.1$out[,labels(ieoa.1)])  
-densityplot(ieoa.1$out[,labels(ieoa.1)])  
-gelman.diag(ieoa.1$out) # gelmanStats  
-gelman.plot(ieoa.1$out) # gelmanPlot`
+`library(lattice)`  
+`xyplot(ieoa.1$out[,labels(ieoa.1)])`
+`acfplot(ieoa.1$out[,labels(ieoa.1)])`  
+`densityplot(ieoa.1$out[,labels(ieoa.1)])`  
+`gelman.diag(ieoa.1$out) # gelmanStats`  
+`gelman.plot(ieoa.1$out) # gelmanPlot`
