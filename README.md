@@ -1,20 +1,21 @@
-# WEST's Evidence of Absence Package
+# Evidence of Absence Regression Package
 
-These are routines to estimate the number of missed entities after a series of
-searches. Often these will be
-used to estimate true number of carcassess on a wind power facility's grounds
-after field searches. Implements the **Evidence of Absence (EoA)** model of Huso et al. (2015) and the
+These are routines implement Evidence of Absence Regression (EoAR) 
+which estimates the number of missed entities after a series of
+searches and relates them to covariates. Special cases are 
+the **Evidence of Absence (EoA)** model of Huso et al. (2015) and the
 **Informed Evidence of Absence (IEoA)** approaches.
 
 ## How to git it:
 
-Assuming you have access to GitLab (i.e., you are inside the WEST network), issue the following 
-commands in your git shell: 
+From GitHub, issue the following 
+commands in a git shell: 
 
 `cd <directory you want>`  
-`git clone 'https://lar-git.west-inc.com/tmcdonald/evoab.git'`  
+`git clone https://github.com/tmcd82070/evoab.git`  
 
-The above commands will download all source from GitLab to your computer.  Among other things, 
+The above commands will download all source from GitHub to your computer.  
+Among other things, 
 you should see a `DESCRIPTION` file and `R` directory.  
 
 ## Intalling:
@@ -37,13 +38,12 @@ the following command:
 
 ## To Contribute
 
-If you change something, and it's useful, issue a [*merge request* here.](https://lar-git.west-inc.com/tmcdonald/evoab/merge_requests)
+If you change something, and it's useful, I would be very interested in hearing about it. 
 
 ## Usage Example
 
-At this time, the main routine is `eoa`.  It takes a count vector, model for lambda, and g-values, 
-Here is an example of how 
-it is run: 
+The main routine is `eoa`.  It takes a count vector, model for lambda, and g-values, 
+Here is an example : 
 
 This is fake data from a three year study on seven sites.  First, the 
 alpha and beta parameters for g-value distributions, one per year.   
@@ -64,22 +64,26 @@ effect (1,2,3,etc) and Year as a factor (2015, 2016, 2017, etc).
 `df <- data.frame(year=factor(c(rep("2015",ny),rep("2016",ny),rep("2017",ny))),  
     Year=c(rep(1,ny),rep(2,ny),rep(3,ny)))`  
 
-The following computes un-informed EoA (vague priors for coefficients):     
+The following relates carcass deposition rates to year using 
+vague priors for coefficients:     
 
 `eoa.1 <- eoa(Y~year, g, df )`
 
-This computes IEoA:
+The following uses informed distributions:
 
 
 `# Assume prior mean is 10 and prior sd is 3`  
 `# Fit intercept-only model to get one mean lambda
-prior <- data.frame(mean=log(10), sd=log(3), row.names="(Intercept)")
+intMean <- 2*log(10) - 0.5*log(3^2 + 10^2)
+intSd <- sqrt(-2*log(10) + log(3^2 + 10^2))
+prior <- data.frame(mean=intMean, sd=intSd, row.names="(Intercept)")
 eoa.1 <- eoa(Y~1, g, df, priors=prior )`
 
 
 After either run, you should check convergence.  
 To do so, run a traceplot and Gelman stats.  Any Rhats > 1.1 indicate suspect 
-convergence. 
+convergence. The following commands are useful for inspecting 
+mixing and convergence:
 
 `library(lattice)  
 xyplot(ieoa.1$out[,labels(ieoa.1)])  

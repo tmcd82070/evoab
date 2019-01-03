@@ -47,7 +47,12 @@ compVagueSd<- function(Y,alpha.vec,beta.vec,X, range.multiplier=100){
 
   lm.fit <- summary(lm.fit)$coefficients
 
-  coef.range <- abs(lm.fit[,"Estimate"]) + 2*lm.fit[,"Std. Error"]
+  if( is.na(lm.fit[,"Std. Error"]) ){
+    # in absence of coef var estimate, seems reasonable to
+    # assume a CV of 100%
+    lm.fit[,"Std. Error"] <- lm.fit[,"Estimate"]
+  }
+  coef.range <- 2*lm.fit[,"Std. Error"]
   coef.range <- coef.range * range.multiplier
 
   # names of coef.range must match coefficient names because

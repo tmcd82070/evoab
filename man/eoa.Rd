@@ -6,7 +6,8 @@
 \usage{
 eoa(lambda, beta.params, data, offset, priors = NULL, conf.level = 0.9,
   nburns = 5e+05, niters = 20000, nthins = 10, nchains = 3,
-  nadapt = 3000, quiet = FALSE, seeds = NULL)
+  nadapt = 3000, quiet = FALSE, seeds = NULL,
+  vagueSDMultiplier = 100)
 }
 \arguments{
 \item{lambda}{A model formula for the lambda parameters of EoA.

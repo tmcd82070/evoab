@@ -304,7 +304,8 @@ eoa <- function(lambda, beta.params, data, offset,
                 priors=NULL,
                 conf.level=0.9, nburns = 500000, niters = 20000,
                 nthins = 10, nchains = 3, nadapt = 3000,
-                quiet=FALSE, seeds=NULL ){
+                quiet=FALSE, seeds=NULL,
+                vagueSDMultiplier = 100){
 
   ## ---- lambdaModel ----
   # Resolve formula for lambda
@@ -345,7 +346,7 @@ eoa <- function(lambda, beta.params, data, offset,
 
   ## ---- resolvePriors ----
   # Use vague normal priors for coefficients (huge SE's) by default
-  sd.n.start <- compVagueSd(Y,alpha.vec,beta.vec,lambda.covars, range.multiplier = 100)
+  sd.n.start <- compVagueSd(Y,alpha.vec,beta.vec,lambda.covars, range.multiplier = vagueSDMultiplier)
   coefTaus <- sd.n.start$vagueSd
 
   coefMus <- rep(0,ncovars)
@@ -470,6 +471,10 @@ eoa <- function(lambda, beta.params, data, offset,
   # Initialize the chains and adapt
   library(rjags)
   (t1=Sys.time())
+
+  assign("JAGS.data.0", JAGS.data.0, envir=.GlobalEnv )
+  assign("inits", inits, envir=.GlobalEnv )
+
   jags = jags.model(file="model.txt",
   									data=JAGS.data.0,
   									inits=inits,
