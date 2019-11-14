@@ -63,6 +63,8 @@
 #' days <- as.POSIXct(startDay) + (0:nSearches)*searchInterval*(60*60*24)
 #' calcGwithK(days, 0.57792, 7.16, "weibull", 0.7, 0.2, 0.5)
 #'
+#' @export
+
 
 calcGwithK <- function(searchDates, crShape, crScale, crDist, seef, k, a){
 

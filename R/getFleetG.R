@@ -1,5 +1,3 @@
-#' @export
-#'
 #' @title getFleetG - Compute all-site (fleetwide) Evidence of Absence g-value.
 #'
 #' @description Compute a single all-site g value from site-season specifice g values.
@@ -57,6 +55,9 @@
 #'    gFac.b = c(  736.4795,  318.3179, 759.9333 ),
 #'    year = c(2015,2015,2016))
 #' getFleetG(syr, "LBBA")
+#'
+#' @export
+
 
 getFleetG <- function(siteYearResults, species="LBBA", weights=NULL, yearWeights=NULL){
 

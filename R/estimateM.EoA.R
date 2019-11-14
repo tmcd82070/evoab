@@ -106,8 +106,12 @@
 #' print(m.ests$M.est)
 
 
-estimateM.EoA <- function(X, beta.params, Mprior="objective", Mprior.mean, Mprior.sd,
-                           conf.level=0.9){
+estimateM.EoA <- function(X,
+                          beta.params,
+                          Mprior="objective",
+                          Mprior.mean,
+                          Mprior.sd,
+                          conf.level=0.9){
 
   quants <- c((1-conf.level)/2, 0.5, 1-(1-conf.level)/2)
 

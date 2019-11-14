@@ -39,7 +39,6 @@ during a set of searches, given a cummulative hazard distribution
 avgPersist(c(0,15,30),"exponential",scale=8.6251)
 avgPersist(c(0,15,30),"weibull",0.57792,7.1683)
 
-
 }
 \seealso{
 \code{\link{eoa}}

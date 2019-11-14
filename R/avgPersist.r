@@ -36,6 +36,7 @@
 #' avgPersist(c(0,15,30),"exponential",scale=8.6251)
 #' avgPersist(c(0,15,30),"weibull",0.57792,7.1683)
 #'
+#' @export
 #'
 avgPersist <- function(searches, dist="exponential", shape, scale){
 
