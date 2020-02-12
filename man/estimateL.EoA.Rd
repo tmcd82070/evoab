@@ -2,13 +2,11 @@
 % Please edit documentation in R/estimateL.EoA.R
 \name{estimateL.EoA}
 \alias{estimateL.EoA}
-\title{estimateL.EoA - Estimate single-site EoA and Informed EoA
-lambda parameters via JAGS}
+\title{estimateL.EoA - Estimate rate parameter Lambda for
+a single-site using the EoA method}
 \usage{
-estimateL.EoA(X, beta.params, Lprior = "uniform", Lprior.mean = NULL,
-  Lprior.sd = NULL, LMax = 62, conf.level = 0.9, seeds = NULL,
-  niters = 10000, nthins = 10, nburn = 50000, nadapt = 2000,
-  nchains = 3)
+estimateL.EoA(X, beta.params, Lprior = "jeffreys", Lprior.mean = NULL,
+  Lprior.sd = NULL, conf.level = 0.9)
 }
 \arguments{
 \item{X}{Total number of search targets found at all searched sites during the
@@ -21,70 +19,40 @@ are computed using function \code{\link{getFleetG}}.}
 \item{Lprior}{A string naming the prior distribution to use for lambda.
 The following priors are implimented:
 \enumerate{
-   \item "uniform" : uses a uniform prior on [0,\code{LMax}].
    \item "normal" : uses a normal(\code{Lprior.mean},\code{Lprior.sd}) prior for lambda.
    \item "gamma" : uses a gamma(alpha,beta) prior for lambda, where alpha =
 \code{Lprior.mean^2}/\code{Lprior.sd^2} and beta = \code{Lprior.mean}/
-\code{Lprior.sd^2} (i.e., alpha and beta are the method of moment estimates
-for the shape and rate parameter of a gamma distribution; JAGS uses the shape-rate
-parameterization of the gamma).
-   \item "objective" : uses a pareto(0.00001,0.25) prior for lambda.  This prior
-   if really close to the Jeffery's prior for a poisson random variable.
-   The Jeffery's prior for a poisson is x^(-0.5).  Correlation between the Jeffery's
-   prior and pareto(0.00001,0.25) is 0.9942.
-
+\code{Lprior.sd^2}. That is, alpha and beta are the method of moment estimates
+for the shape and rate parameter of a gamma distribution.
+   \item "jefferys" : uses a beta(L + 0.5, 0.5) function as the prior for lambda.  This prior
+   is improper and really close to the actual Jeffery's prior for a poisson random variable.
+   This is the Jeffery's prior implemented by Dalthorp's eoa package.
 }}
 
 \item{Lprior.mean}{Mean of lambda prior when Lprior == "normal" or "gamma".}
 
 \item{Lprior.sd}{Standard deviation of normal when Lprior == "normal" or "gamma".}
 
-\item{LMax}{Maximum lambda when Lprior = "uniform".  CAREFUL: set this to a number
-that is well beyond the upper limit of the confidence interval on lambda.  i.e.,
-you may need to run this a couple times to make this big enough.}
-
 \item{conf.level}{Confidence level for the confidence intervals on lambda.}
-
-\item{seeds}{A vector of length \code{nchains} containing random number
-seeds for the MCMC sampler.  If NULL, \code{nchains} random numbers are
-generated from R's base random number generator which is controled outside
-this routine using \code{set.seed}.  Regardless of the random number
-sequence set outside this routine, specifying \code{seeds} will set
-the MCMC seeds in JAGS so that exact chains can be reproduced. Note
-that \code{set.seed} has no effect on the random number sequences used
-in JAGS.  The seeds, whether chosen by this routine or specified, are
-stored in the output object.}
-
-\item{niters}{The number of sampling steps to take during MCMC sampling.}
-
-\item{nthins}{The amount of MCMC chain thinning to do.  Every (\code{nthins})-th
-sampling iteration (of which there are \code{niters}) is saved, while the
-rest are discarded. In the end, a total of \code{niters/nthins} samples from
-the posterior are available to the user.}
-
-\item{nadapt}{The number of adapting iterations to perform before
-burn-in.  During adaptin, JAGS is trying to optimize it's proposal distribution
-and stepsize to increase convergence speed.}
-
-\item{nchains}{The number of MCMC sampling chains. Specify 2 or more to
-check convergence.}
-
-\item{nburns}{The number of burn-in steps to take during MCMC sampling.}
 }
 \value{
 List containing two components:
 \itemize{
-  \item  \code{$lamda.ests} is a data
+  \item  \code{$L.ests} is a data
 frame containing the lambda estiamtes (point estimate and confidence interval).
-  \item \code{$out} is the full MCMC chain object.  Use this to check convergence, etc.
+  \item \code{$L.posterior} is a data frame containing the
+  posterior, posterior cdf, prior, and likelihood. This is returned in case
+  you want to plot them.
 }
 }
 \description{
-This routine computes lambda, the mean number of search targets per season,
-from information about the number of found targets and the g-value (=probatility of
+This routine computes lambda, the mean number of search targets
+out there per season,
+using information from the number of found targets and the g-value (=probatility of
 discovery).  The method is Bayesian and allows either an uniform prior for lambda
 or an informed prior.
-Estimation is performed using JAGS.
+Estimation is direct in the sense that this routine uses numerical
+integration to compute the posterior of lambda.
 }
 \examples{
 
@@ -95,13 +63,14 @@ syr <- data.frame(species=c("LBBA","LBBA","LBBA"),
    year = c(2015,2015,2016))
 g <- getFleetG(syr, "LBBA"))
 
-eoa <- estimateL.EoA( 1, g, LMax=500 )  # Un-informed EoA
+eoa <- estimateL.EoA( 1, g )  # Un-informed EoA
 
 ieoa <- estimateL.EoA( 1, g, Lprior="normal", Lprior.mean=20, Lprior.sd=4) # Informed EoA
 
+# interesting plot showing movement of posterior
+plot(ieoa$L.posterior$L, ieoa$L.posterior$pdf, type="l")
+lines(ieoa$L.posterior$L, ieoa$L.posterior$like.pdf, col="red")
+lines(ieoa$L.posterior$L, ieoa$L.posterior$prior.pdf, col="blue")
+legend("topright", legend=c("prior","likelihood","posterior"), col=c("blue","red","black"), lty=1)
 
-# To check convergence, run traceplot and Gelman stats
-plot(ieoa$out) # tracePlot
-gelman.diag(ieoa$out) # gelmanStats
-gelman.plot(ieoa$out) # gelmanPlot
 }
