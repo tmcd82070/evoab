@@ -36,10 +36,10 @@ fmmax.ab <- function (x, pBa, pBb)
   while (1) {
     m <- mmax:(mmax + 100)
     mmax <- mmax + 100
-    if (VGAM::pbetabinom.ab(x, size = mmax, shape1 = pBa,
-                            shape2 = pBb) < 1e-04) {
-      mmax <- m[min(which(VGAM::pbetabinom.ab(x, size = m,
-                                              shape1 = pBa, shape2 = pBb) < 1e-04))]
+    p <- VGAM::pbetabinom.ab(x, size = mmax, shape1 = pBa,
+                             shape2 = pBb)
+    if ( p < zero) {
+      mmax <- m[min(which(p < zero))]
       break
     }
   }

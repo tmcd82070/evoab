@@ -65,6 +65,12 @@
 #' lines(ieoa$L.posterior$L, ieoa$L.posterior$prior.pdf, col="blue")
 #' legend("topright", legend=c("prior","likelihood","posterior"), col=c("blue","red","black"), lty=1)
 #'
+#' # to check that integral is correct.
+#' flike <- function(x, est){
+#'   approx(est$L.posterior$L, est$L.posterior$like.pdf,xout=x, rule=2)$y
+#'   }
+#' integrate( flike, min(ieoa$L.posterior$L), max(ieoa$L.posterior$L), est=ieoa)
+#'
 #' @export
 estimateL.EoA <- function(X,
                           beta.params,
@@ -75,6 +81,7 @@ estimateL.EoA <- function(X,
 
   quants <- c((1-conf.level)/2, 0.5, 1-(1-conf.level)/2)
   zero <- 1e-6
+  priorShift <- 0.5
   support.n <- 800  # MUST BE EVEN!
 
   ## ---- LSupport ----
@@ -98,7 +105,7 @@ estimateL.EoA <- function(X,
     Lmin <- zero
     Lmax <- fmmax.ab( X, beta.params$alpha, beta.params$beta)
     L.x <- seq(Lmin, Lmax, length=support.n)
-    L.fx <- beta(L.x + 0.5, 0.5)/sqrt(pi)  # not sure we need the sqrt(pi)
+    L.fx <- beta(L.x + priorShift, 0.5)/sqrt(pi)  # not sure we need the sqrt(pi)
   }
 
   ## ---- MSupport ----
@@ -108,7 +115,7 @@ estimateL.EoA <- function(X,
 
   ## ---- Prep for integration ----
   h <- L.x[2]-L.x[1]
-  simp.coef <- (h/3)*c(1,rep(c(4,2),(length(L.x)/2)-1),1) # length(L.x) must be even. i.e., support.n must be even
+  simp.coef <- c(1,rep(c(4,2),(length(L.x)/2)-1),1) # length(L.x) must be even. i.e., support.n must be even
 
   ## ---- Compute the posterior and check if we're close enough ----
   repeat{
@@ -120,13 +127,17 @@ estimateL.EoA <- function(X,
     L.M.grid <- L.M.grid * matrix(like.X, length(M.x), length(L.x))
     L.like <- colSums(L.M.grid) # colSums integrate out M; colSums(L.M.grid) is the likelihood; save for later
     L.post <- L.like * L.fx  # L.fx is the prior for L
-    intgral <- matrix(simp.coef,1,support.n) %*% L.post
+
+    # Now scale: part before + in next statement is the integral from Lmin to Lmax.
+    # Part after + is an approximation to
+    # the integral from 0 to Lmin and only matters when posterior at 0 is substantial
+    intgral <- matrix((h/3)*simp.coef,1,support.n) %*% L.post
     L.post <- L.post / c(intgral)
 
     # ---- Check that both ends of L posterior are near zero ----
 
     if( L.post[which.max(L.x)] <= zero ) {
-      if( L.post[which.min(L.x)] <= zero ) {
+      if( Lmin <= zero | L.post[which.min(L.x)] <= zero  ) {
         break
       }
     }
@@ -140,8 +151,9 @@ estimateL.EoA <- function(X,
         } else {
           Lmin <- (slp*Lmin - L.post[1]) / slp
         }
-        cat(paste0("Pr(L=Lmin)=", round(L.post[1],6),
-                   ". Expanding Lmin from ", Lmin.prev, " to ", Lmin, "\n"))
+        Lmin <- max(zero, Lmin)
+         # cat(paste0("Pr(L=Lmin)=", round(L.post[1],6),
+         #            ". Expanding Lmin from ", Lmin.prev, " to ", Lmin, "\n"))
     }
 
 
@@ -154,8 +166,8 @@ estimateL.EoA <- function(X,
       } else {
         Lmax <- (slp*Lmax - L.post[length(L.x)]) / slp
       }
-      cat(paste0("Pr(L=Lmax)=", round(L.post[length(L.x)],6),
-                 ". Expanding Lmax from ", Lmax.prev, " to ", Lmax, "\n"))
+       # cat(paste0("Pr(L=Lmax)=", round(L.post[length(L.x)],6),
+       #            ". Expanding Lmax from ", Lmax.prev, " to ", Lmax, "\n"))
     }
 
     # ---- Recompute prior using expanded range. ----
@@ -168,8 +180,11 @@ estimateL.EoA <- function(X,
     } else {
       #	this is the Jeffery's prior
       L.x <- seq(Lmin, Lmax, length=support.n)
-      L.fx <- beta(L.x + 0.5, 0.5)/sqrt(pi)  # not sure we need the sqrt(pi)
+      L.fx <- beta(L.x+ priorShift, 0.5)/sqrt(pi)  # not sure we need the sqrt(pi)
     }
+
+    ## ---- Gotta remember that interval changes ----
+    h <- L.x[2]-L.x[1]
 
     ## ---- New MSupport ----
     Mmin <- X
@@ -179,28 +194,55 @@ estimateL.EoA <- function(X,
 
   }
 
+
   ## ---- Summarize posterior ----
+  # The next statement is usually right. i.e., max(L.cdf) = 1. But,
+  # there are cases when x = 0 and a lot of area in the posterior is
+  # near zero when max(L.cdf) ~ 1.05.  I've tried everything to
+  # increase precision of the integration in this case to no avail.
+  # So, I will just rescale the cdf to make sure.  In all cases, even
+  # the problematic ones, the integral of the posterior pdf is very close
+  # (4 digits) to 1.
   L.cdf <- cumsum(L.post) * h
+  L.cdf <- L.cdf / max(L.cdf)
 
   # plots if you need to check
   #plot(L.x, L.fx)
   #plot(L.x, L.post)
   #lines(L.x, L.cdf)
+  # This is how you might check the integrals
+  #fpost <- function(x, L, Lpdf){
+  #  out <- approx(L, Lpdf,
+  #                xout=x, rule=2)$y
+  #  out}
+  # integrate( fpost, min(L.x), max(L.x), L=L.x, Lpdf=L.post)
+
 
   # Mean
-  mu.L <- sum(L.x * L.post)*h
+  # I've decided to compute the mean and var by actually
+  # integrating because just in case the integral is slightly off
+  fm1 <- function(x, L, Lpdf){
+   out <- approx(L, Lpdf,
+                 xout=x, rule=2)$y
+   out*x}
+  # mu.L <- sum(L.x * L.post)*h
+  mu.L <- integrate( fm1, min(L.x), max(L.x), L=L.x, Lpdf=L.post)$value
 
   # SD
-  sd.L <- sqrt(sum((L.x - mu.L)^2 * L.post)*h)
-  v.L <- sd.L * sd.L
+  fcm2 <- function(x, L, Lpdf, mu){
+    out <- approx(L, Lpdf,
+                  xout=x, rule=2)$y
+    out*(x-mu)^2}
+  # sd.L <- sqrt(sum((L.x - mu.L)^2 * L.post)*h)
+  sd.L <- sqrt(integrate( fcm2, min(L.x), max(L.x), L=L.x, Lpdf=L.post, mu=mu.L)$value)
 
   # Quantiles
-  med.L <- approx(L.cdf, L.x, xout=quants, method="constant", f=1, rule=2)$y
+  med.L <- approx(L.cdf, L.x, xout=quants, method="linear", rule=2)$y
 
   # Save likelihood and prior for plotting later
-  intgral <- matrix(simp.coef,1,support.n) %*% L.like
+  intgral <- matrix((h/3)*simp.coef,1,support.n) %*% L.like
   L.like <- L.like / c(intgral)
-  intgral <- matrix(simp.coef,1,support.n) %*% L.fx
+  intgral <- matrix((h/3)*simp.coef,1,support.n) %*% L.fx
   L.fx <- L.fx / c(intgral)
 
   ans <- list(L.est=data.frame(L=med.L[2], L.mu=mu.L, L.sd=sd.L, L.lo=med.L[1],

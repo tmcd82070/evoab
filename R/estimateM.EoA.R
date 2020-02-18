@@ -116,8 +116,9 @@ estimateM.EoA <- function(X,
   quants <- c((1-conf.level)/2, 0.5, 1-(1-conf.level)/2)
 
   ## ---- gSupport -----
-  zero <- 1e-6  # this really effects accuracy of results, more than length of g.x or M.x
+  zero <- 1e-4  # this really effects accuracy of results, more than length of g.x or M.x
   support.g <- qbeta(c(zero,1-zero), beta.params$alpha, beta.params$beta)
+  support.g <- c(max(support.g[1], 0.5/200), min(support.g[2], 1-0.5/200))
   g.x <- seq(support.g[1], support.g[2], length=200)
   g.fx <- dbeta(g.x, beta.params$alpha, beta.params$beta)
 
@@ -192,8 +193,8 @@ estimateM.EoA <- function(X,
       } else {
         Mmax <- ceiling((slp*Mmax - M.margin[length(M.x)]) / slp)
       }
-      cat(paste0("Pr(M=Mmax)=", round(M.margin[length(M.x)],6),
-                 ". Expanding Mmax from ", Mmax.prev, " to ", Mmax, "\n"))
+      # cat(paste0("Pr(M=Mmax)=", round(M.margin[length(M.x)],6),
+      #            ". Expanding Mmax from ", Mmax.prev, " to ", Mmax, "\n"))
 
       if( Mprior == "normal"){
         M.x <- seq(Mmin, Mmax, by=1)
